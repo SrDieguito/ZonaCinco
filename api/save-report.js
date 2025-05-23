@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     data.utilidad == null ||
     data.caja_inicial == null ||
     data.total_depositar == null
-  ) {
+  ) {a
     return res.status(400).json({ message: 'Faltan datos obligatorios' });
   }
 

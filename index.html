@@ -30,7 +30,7 @@
     <h2 class="text-xl font-bold mb-4">Zona 5</h2>
     <nav class="flex flex-col space-y-2">
       <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('formulario')">📋 Reporte Diario</button>
-      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('historial')">📁 Historial</button>
+      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('historial'); cargarHistorial();">📁 Historial</button>
       <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('filtrar')">🔍 Filtrar por Fecha</button>
     </nav>
   </aside>
@@ -44,7 +44,7 @@
     <section id="formulario">
       <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
         <h1 class="text-2xl font-bold mb-6 text-center">Reporte Diario de Ventas</h1>
-        <form id="reporteForm" class="space-y-6">
+        <form id="reporteForm" class="space-y-6" onsubmit="return false;">
           <div>
             <label class="block font-medium">Fecha</label>
             <input type="date" id="fecha" class="w-full mt-1 p-2 border rounded" required />
@@ -144,27 +144,272 @@
         <button id="cerrarVistaPrevia" class="text-red-600 font-bold text-xl" aria-label="Cerrar">&times;</button>
       </div>
       <iframe id="iframePDF" class="flex-1 w-full border rounded"></iframe>
-      <button id="descargarPDF" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 self-end">Descargar PDF</button>
+      <button id="descargarPDF" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Descargar PDF</button>
     </div>
   </div>
 
   <script>
-    // Variables para egresos y reportes guardados
+    // Variables globales
     let egresos = [];
     let reportesGuardados = JSON.parse(localStorage.getItem('reportes')) || [];
+    let pdfBlob = null;
 
-    // Mostrar sección activa y ocultar otras
+    // Elementos
+    const tablaEgresos = document.getElementById('tablaEgresos');
+    const vistaPreviaContainer = document.getElementById('vistaPreviaContainer');
+    const iframePDF = document.getElementById('iframePDF');
+
+    // Función para actualizar tabla egresos
+    function actualizarTablaEgresos() {
+      tablaEgresos.innerHTML = '';
+      egresos.forEach((e, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2 border text-center">${e.monto.toFixed(2)}</td>
+          <td class="p-2 border">${e.categoria}</td>
+          <td class="p-2 border text-center"><button onclick="eliminarEgreso(${i})" class="text-red-600 hover:text-red-800">Eliminar</button></td>
+        `;
+        tablaEgresos.appendChild(tr);
+      });
+      calcularCosto();
+    }
+
+    function eliminarEgreso(index) {
+      egresos.splice(index, 1);
+      actualizarTablaEgresos();
+    }
+
+    // Calcular costo sumando egresos
+    function calcularCosto() {
+      const suma = egresos.reduce((acc, e) => acc + e.monto, 0);
+      document.getElementById('costo').value = suma.toFixed(2);
+    }
+
+    // Agregar egreso
+    document.getElementById('agregarEgreso').addEventListener('click', () => {
+      const monto = parseFloat(document.getElementById('egresoMonto').value);
+      const categoria = document.getElementById('egresoCategoria').value;
+      if (isNaN(monto) || monto <= 0) {
+        alert('Ingrese un monto válido para el egreso.');
+        return;
+      }
+      egresos.push({ monto, categoria });
+      actualizarTablaEgresos();
+      document.getElementById('egresoMonto').value = '';
+      document.getElementById('egresoCategoria').value = 'Transporte';
+    });
+
+    // Calcular depósito (Ventas - Costo - Egresos)
+    function calcularDeposito() {
+      const cajaInicial = parseFloat(document.getElementById('cajaInicial').value) || 0;
+      const efectivo = parseFloat(document.getElementById('efectivo').value) || 0;
+      const transferencia = parseFloat(document.getElementById('transferencia').value) || 0;
+      const costo = parseFloat(document.getElementById('costo').value) || 0;
+      const utilidad = parseFloat(document.getElementById('utilidad').value) || 0;
+      const caja = parseFloat(document.getElementById('caja').value) || 0;
+
+      const totalVentas = efectivo + transferencia + cajaInicial;
+      const totalEgresos = costo + egresos.reduce((acc, e) => acc + e.monto, 0);
+      const totalDepositar = totalVentas - totalEgresos - caja + utilidad;
+
+      document.getElementById('deposito').value = totalDepositar.toFixed(2);
+    }
+
+    // Recalcular depósito cada vez que cambie algún valor relevante
+    ['cajaInicial','efectivo','transferencia','costo','utilidad','caja'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calcularDeposito);
+    });
+
+    // También recalcular al actualizar egresos
+    function recalcularYActualizar() {
+      calcularCosto();
+      calcularDeposito();
+    }
+
+    // Generar PDF con jsPDF y mostrarlo en iframe
+    function generarPDF(data) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // Título
+      doc.setFontSize(18);
+      doc.text('Reporte Diario de Ventas', 14, 20);
+
+      // Datos generales
+      doc.setFontSize(12);
+      doc.text(`Fecha: ${data.fecha}`, 14, 30);
+      doc.text(`Caja Inicial: $${data.cajaInicial.toFixed(2)}`, 14, 38);
+      doc.text(`Ventas en Efectivo: $${data.efectivo.toFixed(2)}`, 14, 46);
+      doc.text(`Ventas por Transferencia: $${data.transferencia.toFixed(2)}`, 14, 54);
+      doc.text(`Costo de Mercadería: $${data.costo.toFixed(2)}`, 14, 62);
+      doc.text(`Utilidad del Día: $${data.utilidad.toFixed(2)}`, 14, 70);
+      doc.text(`Monto dejado en Caja: $${data.caja.toFixed(2)}`, 14, 78);
+      doc.text(`Total a Depositar: $${data.deposito.toFixed(2)}`, 14, 86);
+
+      // Egresos en tabla
+      if (data.egresos.length > 0) {
+        doc.text('Egresos:', 14, 96);
+        const rows = data.egresos.map(e => [e.categoria, `$${e.monto.toFixed(2)}`]);
+        doc.autoTable({
+          startY: 100,
+          head: [['Categoría', 'Monto ($)']],
+          body: rows,
+          theme: 'striped',
+          headStyles: { fillColor: [52, 58, 64] },
+        });
+      }
+
+      // Guardar PDF en Blob para previsualizar
+      pdfBlob = doc.output('blob');
+
+      // Crear URL y mostrar en iframe
+      const url = URL.createObjectURL(pdfBlob);
+      iframePDF.src = url;
+
+      // Mostrar modal
+      vistaPreviaContainer.classList.remove('hidden');
+    }
+
+    // Guardar reporte en localStorage y limpiar formulario
+    document.getElementById('generarPDF').addEventListener('click', () => {
+      const fecha = document.getElementById('fecha').value;
+      if (!fecha) {
+        alert('Seleccione una fecha.');
+        return;
+      }
+
+      const cajaInicial = parseFloat(document.getElementById('cajaInicial').value) || 0;
+      const efectivo = parseFloat(document.getElementById('efectivo').value) || 0;
+      const transferencia = parseFloat(document.getElementById('transferencia').value) || 0;
+      const costo = parseFloat(document.getElementById('costo').value) || 0;
+      const utilidad = parseFloat(document.getElementById('utilidad').value) || 0;
+      const caja = parseFloat(document.getElementById('caja').value) || 0;
+      const deposito = parseFloat(document.getElementById('deposito').value) || 0;
+
+      const reporte = {
+        fecha,
+        cajaInicial,
+        efectivo,
+        transferencia,
+        costo,
+        utilidad,
+        caja,
+        deposito,
+        egresos: [...egresos]
+      };
+
+      reportesGuardados.push(reporte);
+      localStorage.setItem('reportes', JSON.stringify(reportesGuardados));
+
+      generarPDF(reporte);
+
+      // Limpiar formulario y egresos
+      egresos = [];
+      actualizarTablaEgresos();
+      document.getElementById('reporteForm').reset();
+      document.getElementById('costo').value = '';
+      document.getElementById('deposito').value = '';
+
+      // Actualizar historial si visible
+      if (!document.getElementById('historial').classList.contains('hidden')) {
+        mostrarHistorial();
+      }
+    });
+
+    // Mostrar historial
+    function mostrarHistorial() {
+      const lista = document.getElementById('listaReportes');
+      lista.innerHTML = '';
+
+      if (reportesGuardados.length === 0) {
+        lista.innerHTML = '<li class="text-gray-500">No hay reportes guardados.</li>';
+        return;
+      }
+
+      reportesGuardados.forEach((reporte, index) => {
+        const li = document.createElement('li');
+        li.className = 'p-2 bg-gray-100 rounded cursor-pointer hover:bg-gray-200';
+        li.textContent = `Reporte - Fecha: ${reporte.fecha}`;
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
+        li.addEventListener('click', () => {
+          generarPDF(reporte);
+        });
+        lista.appendChild(li);
+      });
+    }
+
+    // Filtrar reportes por fecha
+    document.getElementById('btnFiltrar').addEventListener('click', () => {
+      const fechaFiltro = document.getElementById('fechaFiltro').value;
+      const listaFiltrada = document.getElementById('listaFiltrada');
+      listaFiltrada.innerHTML = '';
+
+      if (!fechaFiltro) {
+        listaFiltrada.innerHTML = '<li class="text-red-600">Seleccione una fecha para filtrar.</li>';
+        return;
+      }
+
+      const filtrados = reportesGuardados.filter(r => r.fecha === fechaFiltro);
+
+      if (filtrados.length === 0) {
+        listaFiltrada.innerHTML = '<li class="text-gray-500">No hay reportes para esa fecha.</li>';
+        return;
+      }
+
+      filtrados.forEach((reporte, index) => {
+        const li = document.createElement('li');
+        li.className = 'p-2 bg-gray-100 rounded cursor-pointer hover:bg-gray-200';
+        li.textContent = `Reporte - Fecha: ${reporte.fecha}`;
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
+        li.addEventListener('click', () => {
+          generarPDF(reporte);
+        });
+        listaFiltrada.appendChild(li);
+      });
+    });
+
+    // Mostrar sección (formulario, historial, filtrar)
     function mostrarSeccion(seccion) {
-      document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
+      ['formulario', 'historial', 'filtrar'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
       document.getElementById(seccion).classList.remove('hidden');
-      // En móvil, cierra sidebar y overlay al cambiar sección
-      if(window.innerWidth < 768){
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
+      if (seccion === 'historial') {
+        mostrarHistorial();
+      }
+      if(seccion === 'filtrar') {
+        document.getElementById('fechaFiltro').value = '';
+        document.getElementById('listaFiltrada').innerHTML = '';
       }
     }
 
-    // Toggle menú móvil
+    // Cerrar modal PDF
+    document.getElementById('cerrarVistaPrevia').addEventListener('click', () => {
+      vistaPreviaContainer.classList.add('hidden');
+      iframePDF.src = '';
+      if(pdfBlob) {
+        URL.revokeObjectURL(iframePDF.src);
+        pdfBlob = null;
+      }
+    });
+
+    // Descargar PDF
+    document.getElementById('descargarPDF').addEventListener('click', () => {
+      if (!pdfBlob) {
+        alert('Primero debe generar un reporte para descargar.');
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(pdfBlob);
+      a.download = 'reporte_diario.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+
+    // Menu hamburguesa y overlay para móvil
     const btnMenu = document.getElementById('btnMenu');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
@@ -179,237 +424,17 @@
       overlay.classList.add('hidden');
     });
 
-    // Agregar egreso
-    document.getElementById('agregarEgreso').addEventListener('click', () => {
-      const monto = parseFloat(document.getElementById('egresoMonto').value);
-      const categoria = document.getElementById('egresoCategoria').value;
-
-      if (!isNaN(monto) && monto > 0 && categoria) {
-        egresos.push({ monto, categoria });
-        actualizarTablaEgresos();
-        document.getElementById('egresoMonto').value = '';
-      }
-    });
-
-    // Actualizar tabla de egresos
-    function actualizarTablaEgresos() {
-      const tbody = document.getElementById('tablaEgresos');
-      tbody.innerHTML = '';
-      egresos.forEach((egr, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2 border text-right">${egr.monto.toFixed(2)}</td>
-          <td class="p-2 border">${egr.categoria}</td>
-          <td class="p-2 border text-center">
-            <button class="text-red-600 hover:text-red-800" onclick="eliminarEgreso(${index})">X</button>
-          </td>`;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Eliminar egreso
-    function eliminarEgreso(index) {
-      egresos.splice(index, 1);
-      actualizarTablaEgresos();
-    }
-
-    // Calcular totales automáticos
-    function calcularTotales() {
-      const cajaInicial = parseFloat(document.getElementById('cajaInicial').value) || 0;
-      const efectivo = parseFloat(document.getElementById('efectivo').value) || 0;
-      const transferencia = parseFloat(document.getElementById('transferencia').value) || 0;
-      const utilidad = parseFloat(document.getElementById('utilidad').value) || 0;
-      const caja = parseFloat(document.getElementById('caja').value) || 0;
-      const costo = cajaInicial + efectivo + transferencia - utilidad;
-      document.getElementById('costo').value = costo.toFixed(2);
-
-      // Total egresos
-      const totalEgresos = egresos.reduce((sum, e) => sum + e.monto, 0);
-      // Total a depositar: caja + ventas - egresos
-      const totalDeposito = caja + efectivo + transferencia - totalEgresos;
-      document.getElementById('deposito').value = totalDeposito.toFixed(2);
-    }
-
-    // Escuchar cambios para recalcular totales
-    ['cajaInicial', 'efectivo', 'transferencia', 'utilidad', 'caja'].forEach(id => {
-      document.getElementById(id).addEventListener('input', calcularTotales);
-    });
-
-    // También recalcular al agregar o eliminar egresos
-    // Lo hacemos en actualizarTablaEgresos llamando a calcularTotales
-
-    // Modificamos actualizarTablaEgresos para llamar calcularTotales
-    const originalActualizarTablaEgresos = actualizarTablaEgresos;
-    actualizarTablaEgresos = function(){
-      const tbody = document.getElementById('tablaEgresos');
-      tbody.innerHTML = '';
-      egresos.forEach((egr, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2 border text-right">${egr.monto.toFixed(2)}</td>
-          <td class="p-2 border">${egr.categoria}</td>
-          <td class="p-2 border text-center">
-            <button class="text-red-600 hover:text-red-800" onclick="eliminarEgreso(${index})">X</button>
-          </td>`;
-        tbody.appendChild(tr);
-      });
-      calcularTotales();
-    };
-
-    // Guardar reporte y generar PDF con jsPDF
-    document.getElementById('generarPDF').addEventListener('click', () => {
-      const fecha = document.getElementById('fecha').value;
-      if (!fecha) {
-        alert('Por favor selecciona una fecha');
-        return;
-      }
-
-      const reporte = {
-        fecha,
-        cajaInicial: parseFloat(document.getElementById('cajaInicial').value) || 0,
-        efectivo: parseFloat(document.getElementById('efectivo').value) || 0,
-        transferencia: parseFloat(document.getElementById('transferencia').value) || 0,
-        costo: parseFloat(document.getElementById('costo').value) || 0,
-        utilidad: parseFloat(document.getElementById('utilidad').value) || 0,
-        egresos: [...egresos],
-        caja: parseFloat(document.getElementById('caja').value) || 0,
-        deposito: parseFloat(document.getElementById('deposito').value) || 0,
-      };
-
-      reportesGuardados.push(reporte);
-      localStorage.setItem('reportes', JSON.stringify(reportesGuardados));
-
-      generarPDF(reporte);
-    });
-
-    // Función para generar y mostrar PDF en iframe
-    function generarPDF(data) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      doc.setFontSize(18);
-      doc.text('Reporte Diario de Ventas', 14, 22);
-      doc.setFontSize(12);
-      doc.text(`Fecha: ${data.fecha}`, 14, 32);
-
-      doc.text('Datos:', 14, 42);
-      doc.text(`Caja Inicial: $${data.cajaInicial.toFixed(2)}`, 14, 50);
-      doc.text(`Ventas en Efectivo: $${data.efectivo.toFixed(2)}`, 14, 58);
-      doc.text(`Ventas por Transferencia: $${data.transferencia.toFixed(2)}`, 14, 66);
-      doc.text(`Costo Mercadería: $${data.costo.toFixed(2)}`, 14, 74);
-      doc.text(`Utilidad del Día: $${data.utilidad.toFixed(2)}`, 14, 82);
-      doc.text(`Monto en Caja: $${data.caja.toFixed(2)}`, 14, 90);
-      doc.text(`Total a Depositar: $${data.deposito.toFixed(2)}`, 14, 98);
-
-      // Tabla egresos
-      const egresosTabla = data.egresos.map(e => [e.categoria, `$${e.monto.toFixed(2)}`]);
-      if (egresosTabla.length > 0) {
-        doc.text('Egresos:', 14, 110);
-        doc.autoTable({
-          startY: 115,
-          head: [['Categoría', 'Monto ($)']],
-          body: egresosTabla,
-          theme: 'grid',
-          headStyles: { fillColor: [30, 30, 30] },
-        });
-      }
-
-      const pdfUrl = doc.output('bloburl');
-      const iframe = document.getElementById('iframePDF');
-      iframe.src = pdfUrl;
-
-      // Mostrar modal vista previa
-      document.getElementById('vistaPreviaContainer').classList.remove('hidden');
-
-      // Guardar pdf para descarga
-      window.pdfDoc = doc;
-    }
-
-    // Cerrar vista previa
-    document.getElementById('cerrarVistaPrevia').addEventListener('click', () => {
-      document.getElementById('vistaPreviaContainer').classList.add('hidden');
-    });
-
-    // Descargar PDF
-    document.getElementById('descargarPDF').addEventListener('click', () => {
-      if (window.pdfDoc) {
-        window.pdfDoc.save(`reporte_${document.getElementById('fecha').value}.pdf`);
-      }
-    });
-
-    // Mostrar historial
-    function mostrarHistorial() {
-      const lista = document.getElementById('listaReportes');
-      lista.innerHTML = '';
-
-      if (reportesGuardados.length === 0) {
-        lista.innerHTML = '<li>No hay reportes guardados.</li>';
-        return;
-      }
-
-      reportesGuardados.forEach((r, i) => {
-        const li = document.createElement('li');
-        li.className = 'border rounded p-2 bg-white flex justify-between items-center';
-
-        const text = document.createElement('span');
-        text.textContent = `Fecha: ${r.fecha} - Utilidad: $${r.utilidad.toFixed(2)}`;
-
-        const btnVer = document.createElement('button');
-        btnVer.textContent = 'Ver PDF';
-        btnVer.className = 'bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700';
-        btnVer.addEventListener('click', () => generarPDF(r));
-
-        li.appendChild(text);
-        li.appendChild(btnVer);
-
-        lista.appendChild(li);
-      });
-    }
-
-    // Mostrar historial al entrar en sección
-    document.querySelector('button[onclick="mostrarSeccion(\'historial\')"]').addEventListener('click', () => {
+    // Cargar historial al iniciar (para que no esté vacío al ir a historial)
+    function cargarHistorial() {
       mostrarHistorial();
+    }
+
+    // Al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+      mostrarSeccion('formulario');
+      actualizarTablaEgresos();
+      recalcularYActualizar();
     });
-
-    // Filtrar reportes por fecha
-    document.getElementById('btnFiltrar').addEventListener('click', () => {
-      const fechaFiltro = document.getElementById('fechaFiltro').value;
-      const lista = document.getElementById('listaFiltrada');
-      lista.innerHTML = '';
-
-      if (!fechaFiltro) {
-        alert('Selecciona una fecha para filtrar');
-        return;
-      }
-
-      const filtrados = reportesGuardados.filter(r => r.fecha === fechaFiltro);
-
-      if (filtrados.length === 0) {
-        lista.innerHTML = '<li>No se encontraron reportes para esa fecha.</li>';
-        return;
-      }
-
-      filtrados.forEach(r => {
-        const li = document.createElement('li');
-        li.className = 'border rounded p-2 bg-white flex justify-between items-center';
-
-        const text = document.createElement('span');
-        text.textContent = `Fecha: ${r.fecha} - Utilidad: $${r.utilidad.toFixed(2)}`;
-
-        const btnVer = document.createElement('button');
-        btnVer.textContent = 'Ver PDF';
-        btnVer.className = 'bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700';
-        btnVer.addEventListener('click', () => generarPDF(r));
-
-        li.appendChild(text);
-        li.appendChild(btnVer);
-
-        lista.appendChild(li);
-      });
-    });
-
-    // Inicializar: mostrar formulario al cargar
-    mostrarSeccion('formulario');
   </script>
 </body>
 </html>
