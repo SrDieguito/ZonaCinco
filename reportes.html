@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporte Diario de Ventas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- jsPDF y jsPDF AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
+    <h1 class="text-2xl font-bold mb-6 text-center">Reporte Diario de Ventas</h1>
+
+    <form id="reporteForm" class="space-y-6">
+      <!-- Fecha -->
+      <div>
+        <label class="block font-medium">Fecha</label>
+        <input type="date" id="fecha" class="w-full mt-1 p-2 border rounded" required />
+      </div>
+
+      <!-- Caja inicial -->
+      <div>
+        <label class="block font-medium">Caja Inicial ($)</label>
+        <input type="number" id="cajaInicial" step="0.01" class="w-full mt-1 p-2 border rounded" />
+      </div>
+
+      <!-- Ventas -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block font-medium">Ventas en Efectivo ($)</label>
+          <input type="number" id="efectivo" step="0.01" class="w-full mt-1 p-2 border rounded" />
+        </div>
+        <div>
+          <label class="block font-medium">Ventas por Transferencia ($)</label>
+          <input type="number" id="transferencia" step="0.01" class="w-full mt-1 p-2 border rounded" />
+        </div>
+      </div>
+
+      <!-- Totales -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block font-medium">Costo de la Mercadería Vendida ($)</label>
+          <input type="text" id="costo" class="w-full mt-1 p-2 border rounded bg-gray-100" readonly />
+        </div>
+        <div>
+          <label class="block font-medium">Utilidad del Día ($)</label>
+          <input type="number" step="0.01" id="utilidad" class="w-full mt-1 p-2 border rounded bg-green-100" />
+        </div>
+      </div>
+
+      <!-- Egresos -->
+      <div>
+        <label class="block font-medium">Nuevo Egreso del Día</label>
+        <div class="flex gap-2 mt-1">
+          <input type="number" id="egresoMonto" placeholder="Monto ($)" class="w-1/2 p-2 border rounded" />
+          <select id="egresoCategoria" class="w-1/2 p-2 border rounded">
+            <option value="Transporte">Transporte</option>
+            <option value="Compra de Mercadería">Compra de Mercadería</option>
+            <option value="Comida">Comida</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <button type="button" id="agregarEgreso" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Agregar Egreso</button>
+
+        <!-- Lista de egresos -->
+        <div class="mt-4">
+          <h2 class="font-semibold mb-2">Egresos del Día</h2>
+          <table class="w-full text-sm border">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="p-2 border">Monto ($)</th>
+                <th class="p-2 border">Categoría</th>
+                <th class="p-2 border">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tablaEgresos"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Caja y depósito -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block font-medium">Monto dejado en Caja ($)</label>
+          <input type="number" id="caja" step="0.01" class="w-full mt-1 p-2 border rounded" />
+        </div>
+        <div>
+          <label class="block font-medium">Total a Depositar ($)</label>
+          <input type="text" id="deposito" class="w-full mt-1 p-2 border rounded bg-blue-100" readonly />
+        </div>
+      </div>
+
+      <div class="text-center mt-6">
+        <!-- Cambié type submit por button para controlar con JS -->
+        <button type="button" id="generarPDF" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Guardar Reporte</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Contenedor para la vista previa del PDF -->
+  <div id="vistaPreviaContainer" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-4 rounded-lg shadow-lg max-w-3xl w-full h-[90%] flex flex-col">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-lg font-semibold">Vista Previa del Reporte</h2>
+        <button id="cerrarVistaPrevia" class="text-red-600 font-bold text-xl">&times;</button>
+      </div>
+      <iframe id="iframePDF" class="flex-1 w-full border rounded"></iframe>
+      <button id="descargarPDF" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 self-end">Descargar PDF</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const fechaInput = document.getElementById("fecha");
+      const efectivo = document.getElementById("efectivo");
+      const transferencia = document.getElementById("transferencia");
+      const costo = document.getElementById("costo");
+      const caja = document.getElementById("caja");
+      const deposito = document.getElementById("deposito");
+
+      const egresoMonto = document.getElementById("egresoMonto");
+      const egresoCategoria = document.getElementById("egresoCategoria");
+      const tablaEgresos = document.getElementById("tablaEgresos");
+      const agregarEgresoBtn = document.getElementById("agregarEgreso");
+
+      const vistaPreviaContainer = document.getElementById("vistaPreviaContainer");
+      const iframePDF = document.getElementById("iframePDF");
+      const cerrarVistaPreviaBtn = document.getElementById("cerrarVistaPrevia");
+      const descargarPDFBtn = document.getElementById("descargarPDF");
+
+      const hoy = new Date().toISOString().split("T")[0];
+      fechaInput.value = hoy;
+
+      let claveEgresos = `egresos_${hoy}`;
+
+      function actualizarTotales() {
+        const valEfectivo = parseFloat(efectivo.value) || 0;
+        const valTransferencia = parseFloat(transferencia.value) || 0;
+        const totalVentas = valEfectivo + valTransferencia;
+        costo.value = totalVentas.toFixed(2);
+
+        const valCaja = parseFloat(caja.value) || 0;
+        const totalDeposito = totalVentas - valCaja;
+        deposito.value = totalDeposito.toFixed(2);
+      }
+
+      efectivo.addEventListener("input", actualizarTotales);
+      transferencia.addEventListener("input", actualizarTotales);
+      caja.addEventListener("input", actualizarTotales);
+
+      function cargarEgresos() {
+        const datos = JSON.parse(localStorage.getItem(claveEgresos)) || [];
+        tablaEgresos.innerHTML = "";
+
+        datos.forEach((e, i) => {
+          const fila = document.createElement("tr");
+          fila.innerHTML = `
+            <td class="p-2 border text-center">${e.monto}</td>
+            <td class="p-2 border text-center">${e.categoria}</td>
+            <td class="p-2 border text-center">
+              <button class="text-red-600 hover:text-red-800" onclick="eliminarEgreso(${i})">🗑️</button>
+            </td>
+          `;
+          tablaEgresos.appendChild(fila);
+        });
+      }
+
+      window.eliminarEgreso = function(index) {
+        let egresos = JSON.parse(localStorage.getItem(claveEgresos)) || [];
+        egresos.splice(index, 1);
+        localStorage.setItem(claveEgresos, JSON.stringify(egresos));
+        cargarEgresos();
+      };
+
+      agregarEgresoBtn.addEventListener("click", () => {
+        const monto = parseFloat(egresoMonto.value);
+        const categoria = egresoCategoria.value;
+        if (!monto || monto <= 0) return;
+
+        const egresos = JSON.parse(localStorage.getItem(claveEgresos)) || [];
+        egresos.push({ monto: monto.toFixed(2), categoria });
+        localStorage.setItem(claveEgresos, JSON.stringify(egresos));
+
+        egresoMonto.value = "";
+        cargarEgresos();
+      });
+
+      cargarEgresos();
+
+      // Actualizar claveEgresos si cambia la fecha
+      fechaInput.addEventListener("change", () => {
+        claveEgresos = `egresos_${fechaInput.value}`;
+        cargarEgresos();
+      });
+
+      // Generar y mostrar vista previa PDF
+      document.getElementById("generarPDF").addEventListener("click", () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const fecha = fechaInput.value;
+        const cajaInicial = document.getElementById("cajaInicial").value || "0.00";
+        const efectivoVal = efectivo.value || "0.00";
+        const transferenciaVal = transferencia.value || "0.00";
+        const utilidadVal = document.getElementById("utilidad").value || "0.00";
+        const costoVal = costo.value || "0.00";
+        const cajaVal = caja.value || "0.00";
+        const depositoVal = deposito.value || "0.00";
+
+        doc.setFontSize(16);
+        doc.text("Reporte Diario de Ventas", 105, 15, null, null, "center");
+        doc.setFontSize(12);
+        doc.text(`Fecha: ${fecha}`, 14, 30);
+        doc.text(`Caja Inicial: $${cajaInicial}`, 14, 40);
+        doc.text(`Ventas en Efectivo: $${efectivoVal}`, 14, 50);
+        doc.text(`Ventas por Transferencia: $${transferenciaVal}`, 14, 60);
+        doc.text(`Costo de Mercadería Vendida: $${costoVal}`, 14, 70);
+        doc.text(`Utilidad del Día: $${utilidadVal}`, 14, 80);
+        doc.text(`Monto dejado en Caja: $${cajaVal}`, 14, 90);
+        doc.text(`Total a Depositar: $${depositoVal}`, 14, 100);
+
+        const egresos = JSON.parse(localStorage.getItem(`egresos_${fecha}`)) || [];
+        if (egresos.length > 0) {
+          doc.text("Egresos del Día:", 14, 110);
+
+          const egresoData = egresos.map(e => [e.monto, e.categoria]);
+
+          doc.autoTable({
+            startY: 115,
+            head: [["Monto ($)", "Categoría"]],
+            body: egresoData,
+          });
+        }
+
+        // Generar Blob y mostrar en iframe para vista previa
+        const pdfBlob = doc.output("blob");
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        iframePDF.src = pdfUrl;
+
+        vistaPreviaContainer.classList.remove("hidden");
+
+        descargarPDFBtn.onclick = () => {
+          doc.save(`reporte_${fecha}.pdf`);
+          vistaPreviaContainer.classList.add("hidden");
+          URL.revokeObjectURL(pdfUrl);
+        };
+      });
+
+      // Cerrar modal vista previa
+      cerrarVistaPreviaBtn.addEventListener("click", () => {
+        vistaPreviaContainer.classList.add("hidden");
+        iframePDF.src = "";
+      });
+
+      // También limpia iframe si clic fuera modal (opcional)
+      vistaPreviaContainer.addEventListener("click", e => {
+        if (e.target === vistaPreviaContainer) {
+          vistaPreviaContainer.classList.add("hidden");
+          iframePDF.src = "";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
