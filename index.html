@@ -9,17 +9,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="bg-gray-100 flex">
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white shadow h-screen fixed top-0 left-0 p-4 hidden md:block">
-    <h2 class="text-xl font-bold mb-6">Menú</h2>
-    <nav class="flex flex-col gap-4">
-      <button class="text-left text-blue-600 hover:underline" onclick="mostrarSeccion('formulario')">Nuevo Reporte</button>
-      <button class="text-left text-blue-600 hover:underline" onclick="mostrarSeccion('historial')">Historial de Reportes</button>
+  <!-- Sidebar bonito -->
+  <aside class="w-64 bg-gray-800 text-white p-4 space-y-4 h-screen fixed top-0 left-0">
+    <h2 class="text-xl font-bold mb-4">Zona 5</h2>
+    <nav class="flex flex-col space-y-2">
+      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('formulario')">📋 Reporte Diario</button>
+      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('historial')">📁 Historial</button>
     </nav>
   </aside>
 
   <!-- Contenido Principal -->
-  <main class="flex-1 md:ml-64 p-4">
+  <main class="flex-1 ml-64 p-4">
     <!-- Formulario de Reporte -->
     <section id="formulario">
       <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
@@ -134,7 +134,11 @@
 
   <!-- Scripts -->
   <script>
-    // Aquí irá toda la lógica JS (por espacio se agrega después si deseas)
+    function mostrarSeccion(id) {
+      document.getElementById('formulario').classList.add('hidden');
+      document.getElementById('historial').classList.add('hidden');
+      document.getElementById(id).classList.remove('hidden');
+    }
   </script>
 </body>
 </html>
