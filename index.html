@@ -3,48 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reporte Diario de Ventas - Responsive</title>
+  <title>Reporte Diario de Ventas</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    main {
+      transition: margin-left 0.3s ease;
+    }
+    @media (min-width: 768px) {
+      main {
+        margin-left: 16rem; /* ancho sidebar */
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 flex flex-col md:flex-row min-h-screen">
+<body class="bg-gray-100 flex min-h-screen">
 
-  <!-- Header móvil -->
-  <header class="md:hidden flex items-center justify-between bg-white shadow p-4">
-    <h2 class="text-xl font-bold">Menú</h2>
-    <button id="btnMenu" aria-label="Abrir menú" class="text-gray-700 focus:outline-none">
-      <!-- Icono hamburguesa -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    </button>
-  </header>
+  <!-- Botón menú hamburguesa para móvil -->
+  <button id="btnMenu" class="md:hidden fixed top-4 left-4 z-50 bg-gray-800 text-white p-2 rounded shadow-lg">
+    ☰
+  </button>
 
   <!-- Sidebar -->
-  <aside id="sidebar" 
-    class="fixed inset-y-0 left-0 bg-white shadow w-64 p-4 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40 md:relative md:translate-x-0">
-
-    <h2 class="text-xl font-bold mb-6">Menú</h2>
-    <nav class="flex flex-col gap-4">
-      <button class="text-left text-blue-600 hover:underline" onclick="mostrarSeccion('formulario'); cerrarMenuMovil()">Nuevo Reporte</button>
-      <button class="text-left text-blue-600 hover:underline" onclick="mostrarSeccion('historial'); cerrarMenuMovil()">Historial de Reportes</button>
+  <aside id="sidebar" class="fixed top-0 left-0 w-64 bg-gray-800 text-white p-4 space-y-4 h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40">
+    <h2 class="text-xl font-bold mb-4">Zona 5</h2>
+    <nav class="flex flex-col space-y-2">
+      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('formulario')">📋 Reporte Diario</button>
+      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('historial')">📁 Historial</button>
+      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('filtrar')">🔍 Filtrar por Fecha</button>
     </nav>
   </aside>
 
-  <!-- Overlay para cerrar menú móvil -->
-  <div id="overlay" 
-    class="fixed inset-0 bg-black bg-opacity-50 hidden z-30 md:hidden" 
-    onclick="cerrarMenuMovil()"></div>
+  <!-- Overlay para cerrar menú en móvil -->
+  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-30 md:hidden"></div>
 
-  <!-- Contenido Principal -->
-  <main class="flex-1 md:ml-64 p-4">
-    <!-- Formulario de Reporte -->
+  <!-- Main Content -->
+  <main class="flex-1 p-6">
+    <!-- Formulario Reporte Diario -->
     <section id="formulario">
       <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
         <h1 class="text-2xl font-bold mb-6 text-center">Reporte Diario de Ventas</h1>
         <form id="reporteForm" class="space-y-6">
-          <!-- Aquí va el formulario igual que antes -->
           <div>
             <label class="block font-medium">Fecha</label>
             <input type="date" id="fecha" class="w-full mt-1 p-2 border rounded" required />
@@ -117,7 +117,7 @@
           </div>
 
           <div class="text-center mt-6">
-            <button type="button" id="generarPDF" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Guardar Reporte</button>
+            <button type="button" id="guardarReporte" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Guardar Reporte</button>
           </div>
         </form>
       </div>
@@ -131,33 +131,241 @@
         <ul id="listaReportes" class="space-y-2"></ul>
       </div>
     </section>
+
+    <!-- Filtrar por Fecha -->
+    <section id="filtrar" class="hidden">
+      <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
+        <h2 class="text-xl font-bold mb-6">Filtrar por Fecha</h2>
+        <input type="date" id="fechaFiltro" class="p-2 border rounded mb-4" />
+        <button id="btnFiltrar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Buscar</button>
+        <ul id="resultadosFiltro" class="mt-4 space-y-2"></ul>
+      </div>
+    </section>
   </main>
 
   <script>
-    // Abrir/cerrar menú móvil
+    // Sidebar móvil
     const btnMenu = document.getElementById('btnMenu');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
 
     btnMenu.addEventListener('click', () => {
-      sidebar.classList.remove('-translate-x-full');
-      overlay.classList.remove('hidden');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
     });
 
-    function cerrarMenuMovil() {
+    overlay.addEventListener('click', () => {
       sidebar.classList.add('-translate-x-full');
       overlay.classList.add('hidden');
-    }
+    });
 
-    // Función para mostrar secciones
+    // Cambiar secciones
     function mostrarSeccion(seccion) {
-      document.getElementById('formulario').classList.add('hidden');
-      document.getElementById('historial').classList.add('hidden');
+      document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
       document.getElementById(seccion).classList.remove('hidden');
+
+      if(window.innerWidth < 768) {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
     }
 
-    // Inicializamos mostrando el formulario
+    // Manejo de egresos
+    const egresoMonto = document.getElementById('egresoMonto');
+    const egresoCategoria = document.getElementById('egresoCategoria');
+    const agregarEgresoBtn = document.getElementById('agregarEgreso');
+    const tablaEgresos = document.getElementById('tablaEgresos');
+
+    let egresos = [];
+
+    function actualizarTablaEgresos() {
+      tablaEgresos.innerHTML = '';
+      egresos.forEach((egreso, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2 border text-right">${egreso.monto.toFixed(2)}</td>
+          <td class="p-2 border">${egreso.categoria}</td>
+          <td class="p-2 border text-center">
+            <button class="text-red-600 hover:underline" onclick="eliminarEgreso(${index})">Eliminar</button>
+          </td>
+        `;
+        tablaEgresos.appendChild(tr);
+      });
+      actualizarTotales();
+    }
+
+    function eliminarEgreso(index) {
+      egresos.splice(index, 1);
+      actualizarTablaEgresos();
+    }
+
+    agregarEgresoBtn.addEventListener('click', () => {
+      const monto = parseFloat(egresoMonto.value);
+      const categoria = egresoCategoria.value;
+      if (!isNaN(monto) && monto > 0) {
+        egresos.push({ monto, categoria });
+        actualizarTablaEgresos();
+        egresoMonto.value = '';
+      }
+    });
+
+    // Calcular totales y mostrar
+    const cajaInicialInput = document.getElementById('cajaInicial');
+    const efectivoInput = document.getElementById('efectivo');
+    const transferenciaInput = document.getElementById('transferencia');
+    const costoInput = document.getElementById('costo');
+    const utilidadInput = document.getElementById('utilidad');
+    const cajaInput = document.getElementById('caja');
+    const depositoInput = document.getElementById('deposito');
+
+    function actualizarTotales() {
+      // Ejemplo básico: Costo = efectivo + transferencia * 0.6 (solo un ejemplo)
+      const efectivo = parseFloat(efectivoInput.value) || 0;
+      const transferencia = parseFloat(transferenciaInput.value) || 0;
+      const utilidad = parseFloat(utilidadInput.value) || 0;
+      const caja = parseFloat(cajaInput.value) || 0;
+
+      const costo = (efectivo + transferencia) * 0.6;
+      costoInput.value = costo.toFixed(2);
+
+      // Total egresos
+      const totalEgresos = egresos.reduce((sum, e) => sum + e.monto, 0);
+
+      // Total a depositar = efectivo + transferencia - egresos - caja + cajaInicial + utilidad
+      const cajaInicial = parseFloat(cajaInicialInput.value) || 0;
+      const totalDeposito = efectivo + transferencia - totalEgresos - caja + cajaInicial + utilidad;
+
+      depositoInput.value = totalDeposito.toFixed(2);
+    }
+
+    cajaInicialInput.addEventListener('input', actualizarTotales);
+    efectivoInput.addEventListener('input', actualizarTotales);
+    transferenciaInput.addEventListener('input', actualizarTotales);
+    utilidadInput.addEventListener('input', actualizarTotales);
+    cajaInput.addEventListener('input', actualizarTotales);
+
+    // Guardar reporte en localStorage
+    const guardarReporteBtn = document.getElementById('guardarReporte');
+    const reporteForm = document.getElementById('reporteForm');
+
+    function cargarReportes() {
+      const repJSON = localStorage.getItem('reportesDiarios');
+      return repJSON ? JSON.parse(repJSON) : [];
+    }
+
+    function guardarReportes(reportes) {
+      localStorage.setItem('reportesDiarios', JSON.stringify(reportes));
+    }
+
+    guardarReporteBtn.addEventListener('click', () => {
+      if (!reporteForm.checkValidity()) {
+        alert('Por favor completa la fecha.');
+        return;
+      }
+      const nuevoReporte = {
+        fecha: document.getElementById('fecha').value,
+        cajaInicial: parseFloat(cajaInicialInput.value) || 0,
+        efectivo: parseFloat(efectivoInput.value) || 0,
+        transferencia: parseFloat(transferenciaInput.value) || 0,
+        costo: parseFloat(costoInput.value) || 0,
+        utilidad: parseFloat(utilidadInput.value) || 0,
+        egresos: [...egresos],
+        caja: parseFloat(cajaInput.value) || 0,
+        deposito: parseFloat(depositoInput.value) || 0,
+        creadoEn: new Date().toISOString(),
+      };
+
+      const reportes = cargarReportes();
+      reportes.push(nuevoReporte);
+      guardarReportes(reportes);
+
+      alert('Reporte guardado!');
+      reporteForm.reset();
+      egresos = [];
+      actualizarTablaEgresos();
+      mostrarSeccion('historial');
+      cargarHistorial();
+    });
+
+    // Cargar historial
+    const listaReportes = document.getElementById('listaReportes');
+
+    function cargarHistorial() {
+      listaReportes.innerHTML = '';
+      const reportes = cargarReportes();
+
+      if(reportes.length === 0) {
+        listaReportes.innerHTML = '<li class="text-center text-gray-500">No hay reportes guardados.</li>';
+        return;
+      }
+
+      reportes.forEach((r, i) => {
+        const li = document.createElement('li');
+        li.className = 'bg-gray-50 rounded p-3 shadow-sm';
+
+        li.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span><strong>Fecha:</strong> ${r.fecha}</span>
+            <button onclick="verReporte(${i})" class="text-blue-600 hover:underline">Ver</button>
+          </div>
+        `;
+        listaReportes.appendChild(li);
+      });
+    }
+
+    function verReporte(index) {
+      const reportes = cargarReportes();
+      const r = reportes[index];
+      alert(`
+Fecha: ${r.fecha}
+Caja Inicial: $${r.cajaInicial.toFixed(2)}
+Ventas Efectivo: $${r.efectivo.toFixed(2)}
+Ventas Transferencia: $${r.transferencia.toFixed(2)}
+Costo: $${r.costo.toFixed(2)}
+Utilidad: $${r.utilidad.toFixed(2)}
+Caja: $${r.caja.toFixed(2)}
+Total a Depositar: $${r.deposito.toFixed(2)}
+Egresos:
+${r.egresos.map(e => `- ${e.categoria}: $${e.monto.toFixed(2)}`).join('\n')}
+      `);
+    }
+
+    // Filtrar reportes por fecha
+    const btnFiltrar = document.getElementById('btnFiltrar');
+    const fechaFiltro = document.getElementById('fechaFiltro');
+    const resultadosFiltro = document.getElementById('resultadosFiltro');
+
+    btnFiltrar.addEventListener('click', () => {
+      const fecha = fechaFiltro.value;
+      resultadosFiltro.innerHTML = '';
+
+      if (!fecha) {
+        alert('Selecciona una fecha para filtrar');
+        return;
+      }
+
+      const reportes = cargarReportes();
+      const filtrados = reportes.filter(r => r.fecha === fecha);
+
+      if (filtrados.length === 0) {
+        resultadosFiltro.innerHTML = '<li class="text-center text-gray-500">No se encontraron reportes para esa fecha.</li>';
+        return;
+      }
+
+      filtrados.forEach((r, i) => {
+        const li = document.createElement('li');
+        li.className = 'bg-gray-50 rounded p-3 shadow-sm';
+        li.textContent = `Reporte de ${r.fecha} - Total a Depositar: $${r.deposito.toFixed(2)}`;
+        resultadosFiltro.appendChild(li);
+      });
+    });
+
+    // Inicializamos con la sección formulario visible y cargamos historial
     mostrarSeccion('formulario');
+    cargarHistorial();
+
+    // Actualizamos totales si ya hay datos precargados
+    actualizarTotales();
   </script>
 
 </body>
