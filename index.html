@@ -20,13 +20,13 @@
 </head>
 <body class="bg-gray-100 flex min-h-screen">
 
-  <!-- Botón menú hamburguesa para móvil -->
-  <button id="btnMenu" class="md:hidden fixed top-4 left-4 z-50 bg-gray-800 text-white p-2 rounded shadow-lg">
+  <!-- Botón menú hamburguesa fijo arriba derecha -->
+  <button id="btnMenu" class="md:hidden fixed top-4 right-4 z-50 bg-gray-800 text-white p-2 rounded shadow-lg" aria-label="Abrir menú">
     ☰
   </button>
 
   <!-- Sidebar -->
-  <aside id="sidebar" class="fixed top-0 left-0 w-64 bg-gray-800 text-white p-4 space-y-4 h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40">
+  <aside id="sidebar" class="fixed top-0 left-0 w-64 bg-gray-800 text-white p-4 space-y-4 h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40" aria-label="Menú lateral">
     <h2 class="text-xl font-bold mb-4">Zona 5</h2>
     <nav class="flex flex-col space-y-2">
       <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('formulario')">📋 Reporte Diario</button>
@@ -35,12 +35,12 @@
     </nav>
   </aside>
 
-  <!-- Overlay para cerrar menú en móvil -->
-  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-30 md:hidden"></div>
+  <!-- Overlay para cerrar menú en móvil (debajo del botón) -->
+  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-30 md:hidden" tabindex="-1"></div>
 
-  <!-- Main Content -->
+  <!-- Contenido Principal -->
   <main class="flex-1 p-6">
-    <!-- Formulario Reporte Diario -->
+    <!-- Formulario de Reporte -->
     <section id="formulario">
       <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
         <h1 class="text-2xl font-bold mb-6 text-center">Reporte Diario de Ventas</h1>
@@ -49,12 +49,10 @@
             <label class="block font-medium">Fecha</label>
             <input type="date" id="fecha" class="w-full mt-1 p-2 border rounded" required />
           </div>
-
           <div>
             <label class="block font-medium">Caja Inicial ($)</label>
             <input type="number" id="cajaInicial" step="0.01" class="w-full mt-1 p-2 border rounded" />
           </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block font-medium">Ventas en Efectivo ($)</label>
@@ -65,7 +63,6 @@
               <input type="number" id="transferencia" step="0.01" class="w-full mt-1 p-2 border rounded" />
             </div>
           </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block font-medium">Costo de la Mercadería Vendida ($)</label>
@@ -76,7 +73,6 @@
               <input type="number" step="0.01" id="utilidad" class="w-full mt-1 p-2 border rounded bg-green-100" />
             </div>
           </div>
-
           <div>
             <label class="block font-medium">Nuevo Egreso del Día</label>
             <div class="flex gap-2 mt-1">
@@ -89,7 +85,6 @@
               </select>
             </div>
             <button type="button" id="agregarEgreso" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Agregar Egreso</button>
-
             <div class="mt-4">
               <h2 class="font-semibold mb-2">Egresos del Día</h2>
               <table class="w-full text-sm border">
@@ -104,7 +99,6 @@
               </table>
             </div>
           </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block font-medium">Monto dejado en Caja ($)</label>
@@ -115,9 +109,8 @@
               <input type="text" id="deposito" class="w-full mt-1 p-2 border rounded bg-blue-100" readonly />
             </div>
           </div>
-
           <div class="text-center mt-6">
-            <button type="button" id="guardarReporte" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Guardar Reporte</button>
+            <button type="button" id="generarPDF" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Guardar Reporte</button>
           </div>
         </form>
       </div>
@@ -135,16 +128,43 @@
     <!-- Filtrar por Fecha -->
     <section id="filtrar" class="hidden">
       <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
-        <h2 class="text-xl font-bold mb-6">Filtrar por Fecha</h2>
-        <input type="date" id="fechaFiltro" class="p-2 border rounded mb-4" />
-        <button id="btnFiltrar" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Buscar</button>
-        <ul id="resultadosFiltro" class="mt-4 space-y-2"></ul>
+        <h2 class="text-xl font-bold mb-6">Filtrar Reportes por Fecha</h2>
+        <input type="date" id="fechaFiltro" class="p-2 border rounded" />
+        <button id="btnFiltrar" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Filtrar</button>
+        <ul id="listaFiltrada" class="mt-4 space-y-2"></ul>
       </div>
     </section>
   </main>
 
+  <!-- Modal PDF -->
+  <div id="vistaPreviaContainer" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-4 rounded-lg shadow-lg max-w-3xl w-full h-[90%] flex flex-col">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-lg font-semibold">Vista Previa del Reporte</h2>
+        <button id="cerrarVistaPrevia" class="text-red-600 font-bold text-xl" aria-label="Cerrar">&times;</button>
+      </div>
+      <iframe id="iframePDF" class="flex-1 w-full border rounded"></iframe>
+      <button id="descargarPDF" class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 self-end">Descargar PDF</button>
+    </div>
+  </div>
+
   <script>
-    // Sidebar móvil
+    // Variables para egresos y reportes guardados
+    let egresos = [];
+    let reportesGuardados = JSON.parse(localStorage.getItem('reportes')) || [];
+
+    // Mostrar sección activa y ocultar otras
+    function mostrarSeccion(seccion) {
+      document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(seccion).classList.remove('hidden');
+      // En móvil, cierra sidebar y overlay al cambiar sección
+      if(window.innerWidth < 768){
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      }
+    }
+
+    // Toggle menú móvil
     const btnMenu = document.getElementById('btnMenu');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
@@ -159,214 +179,237 @@
       overlay.classList.add('hidden');
     });
 
-    // Cambiar secciones
-    function mostrarSeccion(seccion) {
-      document.querySelectorAll('main section').forEach(sec => sec.classList.add('hidden'));
-      document.getElementById(seccion).classList.remove('hidden');
+    // Agregar egreso
+    document.getElementById('agregarEgreso').addEventListener('click', () => {
+      const monto = parseFloat(document.getElementById('egresoMonto').value);
+      const categoria = document.getElementById('egresoCategoria').value;
 
-      if(window.innerWidth < 768) {
-        sidebar.classList.add('-translate-x-full');
-        overlay.classList.add('hidden');
+      if (!isNaN(monto) && monto > 0 && categoria) {
+        egresos.push({ monto, categoria });
+        actualizarTablaEgresos();
+        document.getElementById('egresoMonto').value = '';
       }
-    }
+    });
 
-    // Manejo de egresos
-    const egresoMonto = document.getElementById('egresoMonto');
-    const egresoCategoria = document.getElementById('egresoCategoria');
-    const agregarEgresoBtn = document.getElementById('agregarEgreso');
-    const tablaEgresos = document.getElementById('tablaEgresos');
-
-    let egresos = [];
-
+    // Actualizar tabla de egresos
     function actualizarTablaEgresos() {
-      tablaEgresos.innerHTML = '';
-      egresos.forEach((egreso, index) => {
+      const tbody = document.getElementById('tablaEgresos');
+      tbody.innerHTML = '';
+      egresos.forEach((egr, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="p-2 border text-right">${egreso.monto.toFixed(2)}</td>
-          <td class="p-2 border">${egreso.categoria}</td>
+          <td class="p-2 border text-right">${egr.monto.toFixed(2)}</td>
+          <td class="p-2 border">${egr.categoria}</td>
           <td class="p-2 border text-center">
-            <button class="text-red-600 hover:underline" onclick="eliminarEgreso(${index})">Eliminar</button>
-          </td>
-        `;
-        tablaEgresos.appendChild(tr);
+            <button class="text-red-600 hover:text-red-800" onclick="eliminarEgreso(${index})">X</button>
+          </td>`;
+        tbody.appendChild(tr);
       });
-      actualizarTotales();
     }
 
+    // Eliminar egreso
     function eliminarEgreso(index) {
       egresos.splice(index, 1);
       actualizarTablaEgresos();
     }
 
-    agregarEgresoBtn.addEventListener('click', () => {
-      const monto = parseFloat(egresoMonto.value);
-      const categoria = egresoCategoria.value;
-      if (!isNaN(monto) && monto > 0) {
-        egresos.push({ monto, categoria });
-        actualizarTablaEgresos();
-        egresoMonto.value = '';
-      }
-    });
-
-    // Calcular totales y mostrar
-    const cajaInicialInput = document.getElementById('cajaInicial');
-    const efectivoInput = document.getElementById('efectivo');
-    const transferenciaInput = document.getElementById('transferencia');
-    const costoInput = document.getElementById('costo');
-    const utilidadInput = document.getElementById('utilidad');
-    const cajaInput = document.getElementById('caja');
-    const depositoInput = document.getElementById('deposito');
-
-    function actualizarTotales() {
-      // Ejemplo básico: Costo = efectivo + transferencia * 0.6 (solo un ejemplo)
-      const efectivo = parseFloat(efectivoInput.value) || 0;
-      const transferencia = parseFloat(transferenciaInput.value) || 0;
-      const utilidad = parseFloat(utilidadInput.value) || 0;
-      const caja = parseFloat(cajaInput.value) || 0;
-
-      const costo = (efectivo + transferencia) * 0.6;
-      costoInput.value = costo.toFixed(2);
+    // Calcular totales automáticos
+    function calcularTotales() {
+      const cajaInicial = parseFloat(document.getElementById('cajaInicial').value) || 0;
+      const efectivo = parseFloat(document.getElementById('efectivo').value) || 0;
+      const transferencia = parseFloat(document.getElementById('transferencia').value) || 0;
+      const utilidad = parseFloat(document.getElementById('utilidad').value) || 0;
+      const caja = parseFloat(document.getElementById('caja').value) || 0;
+      const costo = cajaInicial + efectivo + transferencia - utilidad;
+      document.getElementById('costo').value = costo.toFixed(2);
 
       // Total egresos
       const totalEgresos = egresos.reduce((sum, e) => sum + e.monto, 0);
-
-      // Total a depositar = efectivo + transferencia - egresos - caja + cajaInicial + utilidad
-      const cajaInicial = parseFloat(cajaInicialInput.value) || 0;
-      const totalDeposito = efectivo + transferencia - totalEgresos - caja + cajaInicial + utilidad;
-
-      depositoInput.value = totalDeposito.toFixed(2);
+      // Total a depositar: caja + ventas - egresos
+      const totalDeposito = caja + efectivo + transferencia - totalEgresos;
+      document.getElementById('deposito').value = totalDeposito.toFixed(2);
     }
 
-    cajaInicialInput.addEventListener('input', actualizarTotales);
-    efectivoInput.addEventListener('input', actualizarTotales);
-    transferenciaInput.addEventListener('input', actualizarTotales);
-    utilidadInput.addEventListener('input', actualizarTotales);
-    cajaInput.addEventListener('input', actualizarTotales);
-
-    // Guardar reporte en localStorage
-    const guardarReporteBtn = document.getElementById('guardarReporte');
-    const reporteForm = document.getElementById('reporteForm');
-
-    function cargarReportes() {
-      const repJSON = localStorage.getItem('reportesDiarios');
-      return repJSON ? JSON.parse(repJSON) : [];
-    }
-
-    function guardarReportes(reportes) {
-      localStorage.setItem('reportesDiarios', JSON.stringify(reportes));
-    }
-
-    guardarReporteBtn.addEventListener('click', () => {
-      if (!reporteForm.checkValidity()) {
-        alert('Por favor completa la fecha.');
-        return;
-      }
-      const nuevoReporte = {
-        fecha: document.getElementById('fecha').value,
-        cajaInicial: parseFloat(cajaInicialInput.value) || 0,
-        efectivo: parseFloat(efectivoInput.value) || 0,
-        transferencia: parseFloat(transferenciaInput.value) || 0,
-        costo: parseFloat(costoInput.value) || 0,
-        utilidad: parseFloat(utilidadInput.value) || 0,
-        egresos: [...egresos],
-        caja: parseFloat(cajaInput.value) || 0,
-        deposito: parseFloat(depositoInput.value) || 0,
-        creadoEn: new Date().toISOString(),
-      };
-
-      const reportes = cargarReportes();
-      reportes.push(nuevoReporte);
-      guardarReportes(reportes);
-
-      alert('Reporte guardado!');
-      reporteForm.reset();
-      egresos = [];
-      actualizarTablaEgresos();
-      mostrarSeccion('historial');
-      cargarHistorial();
+    // Escuchar cambios para recalcular totales
+    ['cajaInicial', 'efectivo', 'transferencia', 'utilidad', 'caja'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calcularTotales);
     });
 
-    // Cargar historial
-    const listaReportes = document.getElementById('listaReportes');
+    // También recalcular al agregar o eliminar egresos
+    // Lo hacemos en actualizarTablaEgresos llamando a calcularTotales
 
-    function cargarHistorial() {
-      listaReportes.innerHTML = '';
-      const reportes = cargarReportes();
+    // Modificamos actualizarTablaEgresos para llamar calcularTotales
+    const originalActualizarTablaEgresos = actualizarTablaEgresos;
+    actualizarTablaEgresos = function(){
+      const tbody = document.getElementById('tablaEgresos');
+      tbody.innerHTML = '';
+      egresos.forEach((egr, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2 border text-right">${egr.monto.toFixed(2)}</td>
+          <td class="p-2 border">${egr.categoria}</td>
+          <td class="p-2 border text-center">
+            <button class="text-red-600 hover:text-red-800" onclick="eliminarEgreso(${index})">X</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      calcularTotales();
+    };
 
-      if(reportes.length === 0) {
-        listaReportes.innerHTML = '<li class="text-center text-gray-500">No hay reportes guardados.</li>';
+    // Guardar reporte y generar PDF con jsPDF
+    document.getElementById('generarPDF').addEventListener('click', () => {
+      const fecha = document.getElementById('fecha').value;
+      if (!fecha) {
+        alert('Por favor selecciona una fecha');
         return;
       }
 
-      reportes.forEach((r, i) => {
-        const li = document.createElement('li');
-        li.className = 'bg-gray-50 rounded p-3 shadow-sm';
+      const reporte = {
+        fecha,
+        cajaInicial: parseFloat(document.getElementById('cajaInicial').value) || 0,
+        efectivo: parseFloat(document.getElementById('efectivo').value) || 0,
+        transferencia: parseFloat(document.getElementById('transferencia').value) || 0,
+        costo: parseFloat(document.getElementById('costo').value) || 0,
+        utilidad: parseFloat(document.getElementById('utilidad').value) || 0,
+        egresos: [...egresos],
+        caja: parseFloat(document.getElementById('caja').value) || 0,
+        deposito: parseFloat(document.getElementById('deposito').value) || 0,
+      };
 
-        li.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span><strong>Fecha:</strong> ${r.fecha}</span>
-            <button onclick="verReporte(${i})" class="text-blue-600 hover:underline">Ver</button>
-          </div>
-        `;
-        listaReportes.appendChild(li);
+      reportesGuardados.push(reporte);
+      localStorage.setItem('reportes', JSON.stringify(reportesGuardados));
+
+      generarPDF(reporte);
+    });
+
+    // Función para generar y mostrar PDF en iframe
+    function generarPDF(data) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text('Reporte Diario de Ventas', 14, 22);
+      doc.setFontSize(12);
+      doc.text(`Fecha: ${data.fecha}`, 14, 32);
+
+      doc.text('Datos:', 14, 42);
+      doc.text(`Caja Inicial: $${data.cajaInicial.toFixed(2)}`, 14, 50);
+      doc.text(`Ventas en Efectivo: $${data.efectivo.toFixed(2)}`, 14, 58);
+      doc.text(`Ventas por Transferencia: $${data.transferencia.toFixed(2)}`, 14, 66);
+      doc.text(`Costo Mercadería: $${data.costo.toFixed(2)}`, 14, 74);
+      doc.text(`Utilidad del Día: $${data.utilidad.toFixed(2)}`, 14, 82);
+      doc.text(`Monto en Caja: $${data.caja.toFixed(2)}`, 14, 90);
+      doc.text(`Total a Depositar: $${data.deposito.toFixed(2)}`, 14, 98);
+
+      // Tabla egresos
+      const egresosTabla = data.egresos.map(e => [e.categoria, `$${e.monto.toFixed(2)}`]);
+      if (egresosTabla.length > 0) {
+        doc.text('Egresos:', 14, 110);
+        doc.autoTable({
+          startY: 115,
+          head: [['Categoría', 'Monto ($)']],
+          body: egresosTabla,
+          theme: 'grid',
+          headStyles: { fillColor: [30, 30, 30] },
+        });
+      }
+
+      const pdfUrl = doc.output('bloburl');
+      const iframe = document.getElementById('iframePDF');
+      iframe.src = pdfUrl;
+
+      // Mostrar modal vista previa
+      document.getElementById('vistaPreviaContainer').classList.remove('hidden');
+
+      // Guardar pdf para descarga
+      window.pdfDoc = doc;
+    }
+
+    // Cerrar vista previa
+    document.getElementById('cerrarVistaPrevia').addEventListener('click', () => {
+      document.getElementById('vistaPreviaContainer').classList.add('hidden');
+    });
+
+    // Descargar PDF
+    document.getElementById('descargarPDF').addEventListener('click', () => {
+      if (window.pdfDoc) {
+        window.pdfDoc.save(`reporte_${document.getElementById('fecha').value}.pdf`);
+      }
+    });
+
+    // Mostrar historial
+    function mostrarHistorial() {
+      const lista = document.getElementById('listaReportes');
+      lista.innerHTML = '';
+
+      if (reportesGuardados.length === 0) {
+        lista.innerHTML = '<li>No hay reportes guardados.</li>';
+        return;
+      }
+
+      reportesGuardados.forEach((r, i) => {
+        const li = document.createElement('li');
+        li.className = 'border rounded p-2 bg-white flex justify-between items-center';
+
+        const text = document.createElement('span');
+        text.textContent = `Fecha: ${r.fecha} - Utilidad: $${r.utilidad.toFixed(2)}`;
+
+        const btnVer = document.createElement('button');
+        btnVer.textContent = 'Ver PDF';
+        btnVer.className = 'bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700';
+        btnVer.addEventListener('click', () => generarPDF(r));
+
+        li.appendChild(text);
+        li.appendChild(btnVer);
+
+        lista.appendChild(li);
       });
     }
 
-    function verReporte(index) {
-      const reportes = cargarReportes();
-      const r = reportes[index];
-      alert(`
-Fecha: ${r.fecha}
-Caja Inicial: $${r.cajaInicial.toFixed(2)}
-Ventas Efectivo: $${r.efectivo.toFixed(2)}
-Ventas Transferencia: $${r.transferencia.toFixed(2)}
-Costo: $${r.costo.toFixed(2)}
-Utilidad: $${r.utilidad.toFixed(2)}
-Caja: $${r.caja.toFixed(2)}
-Total a Depositar: $${r.deposito.toFixed(2)}
-Egresos:
-${r.egresos.map(e => `- ${e.categoria}: $${e.monto.toFixed(2)}`).join('\n')}
-      `);
-    }
+    // Mostrar historial al entrar en sección
+    document.querySelector('button[onclick="mostrarSeccion(\'historial\')"]').addEventListener('click', () => {
+      mostrarHistorial();
+    });
 
     // Filtrar reportes por fecha
-    const btnFiltrar = document.getElementById('btnFiltrar');
-    const fechaFiltro = document.getElementById('fechaFiltro');
-    const resultadosFiltro = document.getElementById('resultadosFiltro');
+    document.getElementById('btnFiltrar').addEventListener('click', () => {
+      const fechaFiltro = document.getElementById('fechaFiltro').value;
+      const lista = document.getElementById('listaFiltrada');
+      lista.innerHTML = '';
 
-    btnFiltrar.addEventListener('click', () => {
-      const fecha = fechaFiltro.value;
-      resultadosFiltro.innerHTML = '';
-
-      if (!fecha) {
+      if (!fechaFiltro) {
         alert('Selecciona una fecha para filtrar');
         return;
       }
 
-      const reportes = cargarReportes();
-      const filtrados = reportes.filter(r => r.fecha === fecha);
+      const filtrados = reportesGuardados.filter(r => r.fecha === fechaFiltro);
 
       if (filtrados.length === 0) {
-        resultadosFiltro.innerHTML = '<li class="text-center text-gray-500">No se encontraron reportes para esa fecha.</li>';
+        lista.innerHTML = '<li>No se encontraron reportes para esa fecha.</li>';
         return;
       }
 
-      filtrados.forEach((r, i) => {
+      filtrados.forEach(r => {
         const li = document.createElement('li');
-        li.className = 'bg-gray-50 rounded p-3 shadow-sm';
-        li.textContent = `Reporte de ${r.fecha} - Total a Depositar: $${r.deposito.toFixed(2)}`;
-        resultadosFiltro.appendChild(li);
+        li.className = 'border rounded p-2 bg-white flex justify-between items-center';
+
+        const text = document.createElement('span');
+        text.textContent = `Fecha: ${r.fecha} - Utilidad: $${r.utilidad.toFixed(2)}`;
+
+        const btnVer = document.createElement('button');
+        btnVer.textContent = 'Ver PDF';
+        btnVer.className = 'bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700';
+        btnVer.addEventListener('click', () => generarPDF(r));
+
+        li.appendChild(text);
+        li.appendChild(btnVer);
+
+        lista.appendChild(li);
       });
     });
 
-    // Inicializamos con la sección formulario visible y cargamos historial
+    // Inicializar: mostrar formulario al cargar
     mostrarSeccion('formulario');
-    cargarHistorial();
-
-    // Actualizamos totales si ya hay datos precargados
-    actualizarTotales();
   </script>
-
 </body>
 </html>
