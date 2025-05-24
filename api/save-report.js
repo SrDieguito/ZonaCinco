@@ -6,6 +6,7 @@ const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -39,20 +40,22 @@ export default async function handler(req, res) {
       await conn.beginTransaction();
 
       const [result] = await conn.execute(
-        `INSERT INTO reportes 
-        (fecha, ventas_efectivo, ventas_transferencia, egresos, utilidad, caja_inicial, cuanto_queda, total_depositar, detalle_egresos) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          data.fecha,
-          data.ventas_efectivo,
-          data.ventas_transferencia,
-          data.egresos,
-          data.utilidad,
-          data.caja_inicial,
-          data.cuanto_queda,
-          data.total_depositar,
-        ]
-      );
+    `INSERT INTO reportes 
+    (fecha, ventas_efectivo, ventas_transferencia, egresos, utilidad, caja_inicial, cuanto_queda, total_depositar, detalle_egresos) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, // 9 placeholders
+    [
+        data.fecha,
+        data.ventas_efectivo,
+        data.ventas_transferencia,
+        data.egresos,
+        data.utilidad,
+        data.caja_inicial,
+        data.cuanto_queda,
+        data.total_depositar,
+        JSON.stringify(data.detalle_egresos), 
+    ]
+    );
+
 
       const reporteId = result.insertId;
 
