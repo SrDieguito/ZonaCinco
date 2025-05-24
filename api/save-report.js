@@ -20,12 +20,10 @@ const ReportSchema = z.object({
   caja_inicial: z.number(),
   cuanto_queda: z.number(),
   total_depositar: z.number(),
-  detalle_egresos: z.array(
-    z.object({
-      categoria: z.string(),
-      monto: z.number(),
-    })
-  ),
+  detalle_egresos: z.array(z.object({
+    categoria: z.string(),
+    monto: z.number()
+  })),
 });
 
 export default async function handler(req, res) {
@@ -42,7 +40,7 @@ export default async function handler(req, res) {
 
       const [result] = await conn.execute(
         `INSERT INTO reportes 
-        (fecha, ventas_efectivo, ventas_transferencia, egresos, utilidad, caja_inicial, cuanto_queda, total_depositar) 
+        (fecha, ventas_efectivo, ventas_transferencia, egresos, utilidad, caja_inicial, cuanto_queda, total_depositar, detalle_egresos) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           data.fecha,
@@ -84,6 +82,8 @@ export default async function handler(req, res) {
     }
 
     console.error('Error al guardar el reporte:', error);
-    return res.status(500).json({ message: 'Error interno', error: error.message });
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ message: 'Error en el servidor', error: error.message });
+
   }
 }
