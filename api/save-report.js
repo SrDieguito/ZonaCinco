@@ -1,9 +1,6 @@
-// /api/save-report.js
-
 import mysql from 'mysql2/promise';
 import { z } from 'zod';
 
-// Creamos un pool de conexiones reutilizable
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -14,17 +11,21 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-// Esquema de validación con Zod
 const ReportSchema = z.object({
-  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
-    message: 'Formato de fecha inválido (debe ser YYYY-MM-DD)',
-  }),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   ventas_efectivo: z.number(),
   ventas_transferencia: z.number(),
   egresos: z.number(),
   utilidad: z.number(),
   caja_inicial: z.number(),
+  cuanto_queda: z.number(),
   total_depositar: z.number(),
+  detalle_egresos: z.array(
+    z.object({
+      categoria: z.string(),
+      monto: z.number(),
+    })
+  ),
 });
 
 export default async function handler(req, res) {
@@ -33,37 +34,56 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Validamos los datos del body con Zod
     const data = ReportSchema.parse(req.body);
 
-    const query = `
-      INSERT INTO reportes 
-      (fecha, ventas_efectivo, ventas_transferencia, egresos, utilidad, caja_inicial, total_depositar) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
 
-    const values = [
-      data.fecha,
-      data.ventas_efectivo,
-      data.ventas_transferencia,
-      data.egresos,
-      data.utilidad,
-      data.caja_inicial,
-      data.total_depositar,
-    ];
+      const [result] = await conn.execute(
+        `INSERT INTO reportes 
+        (fecha, ventas_efectivo, ventas_transferencia, egresos, utilidad, caja_inicial, cuanto_queda, total_depositar) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          data.fecha,
+          data.ventas_efectivo,
+          data.ventas_transferencia,
+          data.egresos,
+          data.utilidad,
+          data.caja_inicial,
+          data.cuanto_queda,
+          data.total_depositar,
+        ]
+      );
 
-    const [result] = await pool.execute(query, values);
+      const reporteId = result.insertId;
 
-    return res.status(200).json({ message: 'Reporte guardado', id: result.insertId });
+      for (const egreso of data.detalle_egresos) {
+        await conn.execute(
+          `INSERT INTO egresos (reporte_id, categoria, monto) VALUES (?, ?, ?)`,
+          [reporteId, egreso.categoria, egreso.monto]
+        );
+      }
+
+      await conn.commit();
+      conn.release();
+
+      return res.status(200).json({ message: 'Reporte y egresos guardados', id: reporteId });
+
+    } catch (dbError) {
+      await conn.rollback();
+      conn.release();
+      throw dbError;
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
         message: 'Datos inválidos',
-        errors: error.errors.map((e) => e.message),
+        errors: error.errors.map(e => e.message),
       });
     }
 
     console.error('Error al guardar el reporte:', error);
-    return res.status(500).json({ message: 'Error guardando reporte', error: error.message });
+    return res.status(500).json({ message: 'Error interno', error: error.message });
   }
 }

@@ -1,96 +1,167 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Guardar Reporte</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; }
-    form > div { margin-bottom: 1rem; }
-    label { display: block; font-weight: bold; margin-bottom: 0.3rem; }
-    input { width: 100%; padding: 0.5rem; }
-    button { padding: 0.6rem 1rem; background-color: #00983d; color: white; border: none; cursor: pointer; }
-    .message { margin-top: 1rem; font-weight: bold; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reporte Diario</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>Guardar Reporte Diario</h1>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl">
+    <h1 class="text-2xl font-bold mb-6 text-center">Formulario de Reporte Diario</h1>
+    <form id="reporteForm" class="grid grid-cols-1 gap-4">
+      <input type="date" name="fecha" class="input" required />
+      <input type="number" step="0.01" name="caja_inicial" placeholder="Caja Inicial" class="input" required />
+      <input type="number" step="0.01" name="ventas_efectivo" placeholder="Ventas en Efectivo" class="input" required />
+      <input type="number" step="0.01" name="ventas_transferencia" placeholder="Ventas por Transferencia" class="input" required />
+      <input type="number" step="0.01" name="total_ventas" placeholder="Total Ventas (calculado)" class="input bg-gray-100" readonly />
 
-  <form id="reporte-form">
-    <div>
-      <label for="fecha">Fecha</label>
-      <input type="date" id="fecha" name="fecha" required />
-    </div>
-    <div>
-      <label for="ventas_efectivo">Ventas Efectivo</label>
-      <input type="number" id="ventas_efectivo" name="ventas_efectivo" required step="0.01"/>
-    </div>
-    <div>
-      <label for="ventas_transferencia">Ventas Transferencia</label>
-      <input type="number" id="ventas_transferencia" name="ventas_transferencia" required step="0.01"/>
-    </div>
-    <div>
-      <label for="egresos">Egresos</label>
-      <input type="number" id="egresos" name="egresos" required step="0.01"/>
-    </div>
-    <div>
-      <label for="utilidad">Utilidad</label>
-      <input type="number" id="utilidad" name="utilidad" required step="0.01"/>
-    </div>
-    <div>
-      <label for="caja_inicial">Caja Inicial</label>
-      <input type="number" id="caja_inicial" name="caja_inicial" required step="0.01"/>
-    </div>
-    <div>
-      <label for="total_depositar">Total a Depositar</label>
-      <input type="number" id="total_depositar" name="total_depositar" required step="0.01"/>
-    </div>
-    <button type="submit">Guardar</button>
-  </form>
+      <div class="flex items-center gap-2">
+        <label class="font-semibold">Egresos:</label>
+        <select id="categoria_egreso" class="input">
+          <option value="Comida">Comida</option>
+          <option value="Pago proveedor">Pago proveedor</option>
+          <option value="Transportes">Transportes</option>
+          <option value="Recreo">Recreo</option>
+          <option value="Aseo">Aseo</option>
+          <option value="Regalo prenda">Regalo prenda</option>
+          <option value="Perdida prenda">Pérdida prenda</option>
+          <option value="Otro">Otro</option>
+        </select>
+        <input type="text" id="otro_egreso" class="input" placeholder="Describir otro..." style="display: none;" />
+        <input type="number" step="0.01" id="monto_egreso" class="input w-32" placeholder="$" />
+        <button type="button" id="agregar_egreso" class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700">Agregar</button>
+      </div>
 
-  <div class="message" id="message"></div>
+      <ul id="lista_egresos" class="list-disc pl-5 text-sm text-gray-700"></ul>
+
+      <input type="number" step="0.01" name="cuanto_queda" placeholder="¿Cuánto queda en caja?" class="input" required />
+      <input type="number" step="0.01" name="utilidad" placeholder="Utilidad del Día" class="input" required />
+      <input type="number" step="0.01" name="total_depositar" placeholder="Total a Depositar (calculado)" class="input bg-gray-100" readonly />
+
+      <button type="submit" class="bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">Guardar Reporte</button>
+    </form>
+    <div id="mensaje" class="mt-4 text-center text-sm"></div>
+  </div>
 
   <script>
-    document.getElementById('reporte-form').addEventListener('submit', async function (e) {
+    let egresos = [];
+
+    function calcularTotalVentas() {
+      const efectivo = parseFloat(document.querySelector('[name="ventas_efectivo"]').value) || 0;
+      const transferencia = parseFloat(document.querySelector('[name="ventas_transferencia"]').value) || 0;
+      document.querySelector('[name="total_ventas"]').value = (efectivo + transferencia).toFixed(2);
+      calcularTotalDepositar();
+    }
+
+    function calcularTotalEgresos() {
+      return egresos.reduce((acc, egreso) => acc + egreso.monto, 0);
+    }
+
+    function calcularTotalDepositar() {
+      const cajaInicial = parseFloat(document.querySelector('[name="caja_inicial"]').value) || 0;
+      const efectivo = parseFloat(document.querySelector('[name="ventas_efectivo"]').value) || 0;
+      const transferencia = parseFloat(document.querySelector('[name="ventas_transferencia"]').value) || 0;
+      const queda = parseFloat(document.querySelector('[name="cuanto_queda"]').value) || 0;
+      const totalEgresos = calcularTotalEgresos();
+
+      const total = cajaInicial + efectivo + transferencia - queda - totalEgresos;
+      document.querySelector('[name="total_depositar"]').value = total.toFixed(2);
+    }
+
+    function renderEgresos() {
+      const lista = document.getElementById('lista_egresos');
+      lista.innerHTML = '';
+      egresos.forEach((egreso, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${egreso.categoria}: $${egreso.monto.toFixed(2)}`;
+        const btn = document.createElement('button');
+        btn.textContent = '❌';
+        btn.className = 'ml-2 text-red-600';
+        btn.onclick = () => {
+          egresos.splice(index, 1);
+          renderEgresos();
+          calcularTotalDepositar();
+        };
+        li.appendChild(btn);
+        lista.appendChild(li);
+      });
+    }
+
+    document.getElementById('categoria_egreso').addEventListener('change', (e) => {
+      document.getElementById('otro_egreso').style.display = e.target.value === 'Otro' ? 'block' : 'none';
+    });
+
+    document.getElementById('agregar_egreso').addEventListener('click', () => {
+      const categoria = document.getElementById('categoria_egreso').value === 'Otro'
+        ? document.getElementById('otro_egreso').value.trim()
+        : document.getElementById('categoria_egreso').value;
+      const monto = parseFloat(document.getElementById('monto_egreso').value);
+      if (!categoria || isNaN(monto) || monto <= 0) return;
+      egresos.push({ categoria, monto });
+      renderEgresos();
+      calcularTotalDepositar();
+      document.getElementById('monto_egreso').value = '';
+      document.getElementById('otro_egreso').value = '';
+    });
+
+    document.querySelector('[name="ventas_efectivo"]').addEventListener('input', calcularTotalVentas);
+    document.querySelector('[name="ventas_transferencia"]').addEventListener('input', calcularTotalVentas);
+    document.querySelector('[name="caja_inicial"]').addEventListener('input', calcularTotalDepositar);
+    document.querySelector('[name="cuanto_queda"]').addEventListener('input', calcularTotalDepositar);
+
+    document.getElementById('reporteForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const form = e.target;
       const data = {
         fecha: form.fecha.value,
+        caja_inicial: parseFloat(form.caja_inicial.value),
         ventas_efectivo: parseFloat(form.ventas_efectivo.value),
         ventas_transferencia: parseFloat(form.ventas_transferencia.value),
-        egresos: parseFloat(form.egresos.value),
+        egresos: calcularTotalEgresos(),
         utilidad: parseFloat(form.utilidad.value),
-        caja_inicial: parseFloat(form.caja_inicial.value),
+        cuanto_queda: parseFloat(form.cuanto_queda.value),
         total_depositar: parseFloat(form.total_depositar.value),
+        detalle_egresos: egresos,
       };
 
-      const messageDiv = document.getElementById('message');
-
       try {
-        const response = await fetch('/api/save-report', {
+        const res = await fetch('/api/save-report', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
         });
 
-        const result = await response.json();
+        const result = await res.json();
+        const mensaje = document.getElementById('mensaje');
 
-        if (response.ok) {
-          messageDiv.textContent = `✅ Reporte guardado correctamente (ID: ${result.id})`;
-          messageDiv.style.color = 'green';
+        if (res.ok) {
+          mensaje.textContent = '✅ Reporte guardado con éxito';
+          mensaje.className = 'text-green-600';
           form.reset();
+          egresos = [];
+          renderEgresos();
+          calcularTotalVentas();
         } else {
-          messageDiv.textContent = `❌ Error: ${result.message || 'Error desconocido'}`;
-          messageDiv.style.color = 'red';
+          mensaje.textContent = '❌ Error: ' + (result.errors ? result.errors.join(', ') : result.message);
+          mensaje.className = 'text-red-600';
         }
       } catch (err) {
-        messageDiv.textContent = `❌ Error de red: ${err.message}`;
-        messageDiv.style.color = 'red';
+        console.error(err);
+        document.getElementById('mensaje').textContent = '❌ Error de red o del servidor';
+        document.getElementById('mensaje').className = 'text-red-600';
       }
     });
+
+    renderEgresos();
+    calcularTotalVentas();
   </script>
+
+  <style>
+    .input {
+      @apply border border-gray-300 p-2 rounded-xl w-full;
+    }
+  </style>
 </body>
 </html>
