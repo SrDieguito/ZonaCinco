@@ -2,438 +2,94 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reporte Diario de Ventas</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Guardar Reporte</title>
   <style>
-    main {
-      transition: margin-left 0.3s ease;
-    }
-    @media (min-width: 768px) {
-      main {
-        margin-left: 16rem; /* ancho sidebar */
-      }
-    }
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    form > div { margin-bottom: 1rem; }
+    label { display: block; font-weight: bold; margin-bottom: 0.3rem; }
+    input { width: 100%; padding: 0.5rem; }
+    button { padding: 0.6rem 1rem; background-color: #00983d; color: white; border: none; cursor: pointer; }
+    .message { margin-top: 1rem; font-weight: bold; }
   </style>
 </head>
-<body class="bg-gray-100 flex min-h-screen">
+<body>
+  <h1>Guardar Reporte Diario</h1>
 
-  <!-- Botón menú hamburguesa fijo arriba derecha -->
-  <button id="btnMenu" class="md:hidden fixed top-4 right-4 z-50 bg-gray-800 text-white p-2 rounded shadow-lg" aria-label="Abrir menú">
-    ☰
-  </button>
-
-  <!-- Sidebar -->
-  <aside id="sidebar" class="fixed top-0 left-0 w-64 bg-gray-800 text-white p-4 space-y-4 h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40" aria-label="Menú lateral">
-    <h2 class="text-xl font-bold mb-4">Zona 5</h2>
-    <nav class="flex flex-col space-y-2">
-      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('formulario')">📋 Reporte Diario</button>
-      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('historial'); cargarHistorial();">📁 Historial</button>
-      <button class="text-left hover:bg-gray-700 p-2 rounded" onclick="mostrarSeccion('filtrar')">🔍 Filtrar por Fecha</button>
-    </nav>
-  </aside>
-
-  <!-- Overlay para cerrar menú en móvil (debajo del botón) -->
-  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-30 md:hidden" tabindex="-1"></div>
-
-  <!-- Contenido Principal -->
-  <main class="flex-1 p-6">
-    <!-- Formulario de Reporte -->
-    <section id="formulario">
-      <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
-        <h1 class="text-2xl font-bold mb-6 text-center">Reporte Diario de Ventas</h1>
-        <form id="reporteForm" class="space-y-6" onsubmit="return false;">
-          <div>
-            <label class="block font-medium">Fecha</label>
-            <input type="date" id="fecha" class="w-full mt-1 p-2 border rounded" required />
-          </div>
-          <div>
-            <label class="block font-medium">Caja Inicial ($)</label>
-            <input type="number" id="cajaInicial" step="0.01" class="w-full mt-1 p-2 border rounded" />
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block font-medium">Ventas en Efectivo ($)</label>
-              <input type="number" id="efectivo" step="0.01" class="w-full mt-1 p-2 border rounded" />
-            </div>
-            <div>
-              <label class="block font-medium">Ventas por Transferencia ($)</label>
-              <input type="number" id="transferencia" step="0.01" class="w-full mt-1 p-2 border rounded" />
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block font-medium">Costo de la Mercadería Vendida ($)</label>
-              <input type="text" id="costo" class="w-full mt-1 p-2 border rounded bg-gray-100" readonly />
-            </div>
-            <div>
-              <label class="block font-medium">Utilidad del Día ($)</label>
-              <input type="number" step="0.01" id="utilidad" class="w-full mt-1 p-2 border rounded bg-green-100" />
-            </div>
-          </div>
-          <div>
-            <label class="block font-medium">Nuevo Egreso del Día</label>
-            <div class="flex gap-2 mt-1">
-              <input type="number" id="egresoMonto" placeholder="Monto ($)" class="w-1/2 p-2 border rounded" />
-              <select id="egresoCategoria" class="w-1/2 p-2 border rounded">
-                <option value="Transporte">Transporte</option>
-                <option value="Compra de Mercadería">Compra de Mercadería</option>
-                <option value="Comida">Comida</option>
-                <option value="Otros">Otros</option>
-              </select>
-            </div>
-            <button type="button" id="agregarEgreso" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Agregar Egreso</button>
-            <div class="mt-4">
-              <h2 class="font-semibold mb-2">Egresos del Día</h2>
-              <table class="w-full text-sm border">
-                <thead>
-                  <tr class="bg-gray-200">
-                    <th class="p-2 border">Monto ($)</th>
-                    <th class="p-2 border">Categoría</th>
-                    <th class="p-2 border">Acción</th>
-                  </tr>
-                </thead>
-                <tbody id="tablaEgresos"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block font-medium">Monto dejado en Caja ($)</label>
-              <input type="number" id="caja" step="0.01" class="w-full mt-1 p-2 border rounded" />
-            </div>
-            <div>
-              <label class="block font-medium">Total a Depositar ($)</label>
-              <input type="text" id="deposito" class="w-full mt-1 p-2 border rounded bg-blue-100" readonly />
-            </div>
-          </div>
-          <div class="text-center mt-6">
-            <button type="button" id="generarPDF" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">Guardar Reporte</button>
-          </div>
-        </form>
-      </div>
-    </section>
-
-    <!-- Historial de Reportes -->
-    <section id="historial" class="hidden">
-      <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
-        <h2 class="text-xl font-bold mb-6">Historial de Reportes</h2>
-        <input type="date" id="buscarFecha" class="p-2 border rounded mb-4" />
-        <ul id="listaReportes" class="space-y-2"></ul>
-      </div>
-    </section>
-
-    <!-- Filtrar por Fecha -->
-    <section id="filtrar" class="hidden">
-      <div class="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow">
-        <h2 class="text-xl font-bold mb-6">Filtrar Reportes por Fecha</h2>
-        <input type="date" id="fechaFiltro" class="p-2 border rounded" />
-        <button id="btnFiltrar" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Filtrar</button>
-        <ul id="listaFiltrada" class="mt-4 space-y-2"></ul>
-      </div>
-    </section>
-  </main>
-
-  <!-- Modal PDF -->
-  <div id="vistaPreviaContainer" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white p-4 rounded-lg shadow-lg max-w-3xl w-full h-[90%] flex flex-col">
-      <div class="flex justify-between items-center mb-2">
-        <h2 class="text-lg font-semibold">Vista Previa del Reporte</h2>
-        <button id="cerrarVistaPrevia" class="text-red-600 font-bold text-xl" aria-label="Cerrar">&times;</button>
-      </div>
-      <iframe id="iframePDF" class="flex-1 w-full border rounded"></iframe>
-      <button id="descargarPDF" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Descargar PDF</button>
+  <form id="reporte-form">
+    <div>
+      <label for="fecha">Fecha</label>
+      <input type="date" id="fecha" name="fecha" required />
     </div>
-  </div>
+    <div>
+      <label for="ventas_efectivo">Ventas Efectivo</label>
+      <input type="number" id="ventas_efectivo" name="ventas_efectivo" required step="0.01"/>
+    </div>
+    <div>
+      <label for="ventas_transferencia">Ventas Transferencia</label>
+      <input type="number" id="ventas_transferencia" name="ventas_transferencia" required step="0.01"/>
+    </div>
+    <div>
+      <label for="egresos">Egresos</label>
+      <input type="number" id="egresos" name="egresos" required step="0.01"/>
+    </div>
+    <div>
+      <label for="utilidad">Utilidad</label>
+      <input type="number" id="utilidad" name="utilidad" required step="0.01"/>
+    </div>
+    <div>
+      <label for="caja_inicial">Caja Inicial</label>
+      <input type="number" id="caja_inicial" name="caja_inicial" required step="0.01"/>
+    </div>
+    <div>
+      <label for="total_depositar">Total a Depositar</label>
+      <input type="number" id="total_depositar" name="total_depositar" required step="0.01"/>
+    </div>
+    <button type="submit">Guardar</button>
+  </form>
+
+  <div class="message" id="message"></div>
 
   <script>
-    // Variables globales
-    let egresos = [];
-    let reportesGuardados = JSON.parse(localStorage.getItem('reportes')) || [];
-    let pdfBlob = null;
+    document.getElementById('reporte-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
 
-    // Elementos
-    const tablaEgresos = document.getElementById('tablaEgresos');
-    const vistaPreviaContainer = document.getElementById('vistaPreviaContainer');
-    const iframePDF = document.getElementById('iframePDF');
-
-    // Función para actualizar tabla egresos
-    function actualizarTablaEgresos() {
-      tablaEgresos.innerHTML = '';
-      egresos.forEach((e, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="p-2 border text-center">${e.monto.toFixed(2)}</td>
-          <td class="p-2 border">${e.categoria}</td>
-          <td class="p-2 border text-center"><button onclick="eliminarEgreso(${i})" class="text-red-600 hover:text-red-800">Eliminar</button></td>
-        `;
-        tablaEgresos.appendChild(tr);
-      });
-      calcularCosto();
-    }
-
-    function eliminarEgreso(index) {
-      egresos.splice(index, 1);
-      actualizarTablaEgresos();
-    }
-
-    // Calcular costo sumando egresos
-    function calcularCosto() {
-      const suma = egresos.reduce((acc, e) => acc + e.monto, 0);
-      document.getElementById('costo').value = suma.toFixed(2);
-    }
-
-    // Agregar egreso
-    document.getElementById('agregarEgreso').addEventListener('click', () => {
-      const monto = parseFloat(document.getElementById('egresoMonto').value);
-      const categoria = document.getElementById('egresoCategoria').value;
-      if (isNaN(monto) || monto <= 0) {
-        alert('Ingrese un monto válido para el egreso.');
-        return;
-      }
-      egresos.push({ monto, categoria });
-      actualizarTablaEgresos();
-      document.getElementById('egresoMonto').value = '';
-      document.getElementById('egresoCategoria').value = 'Transporte';
-    });
-
-    // Calcular depósito (Ventas - Costo - Egresos)
-    function calcularDeposito() {
-      const cajaInicial = parseFloat(document.getElementById('cajaInicial').value) || 0;
-      const efectivo = parseFloat(document.getElementById('efectivo').value) || 0;
-      const transferencia = parseFloat(document.getElementById('transferencia').value) || 0;
-      const costo = parseFloat(document.getElementById('costo').value) || 0;
-      const utilidad = parseFloat(document.getElementById('utilidad').value) || 0;
-      const caja = parseFloat(document.getElementById('caja').value) || 0;
-
-      const totalVentas = efectivo + transferencia + cajaInicial;
-      const totalEgresos = costo + egresos.reduce((acc, e) => acc + e.monto, 0);
-      const totalDepositar = totalVentas - totalEgresos - caja + utilidad;
-
-      document.getElementById('deposito').value = totalDepositar.toFixed(2);
-    }
-
-    // Recalcular depósito cada vez que cambie algún valor relevante
-    ['cajaInicial','efectivo','transferencia','costo','utilidad','caja'].forEach(id => {
-      document.getElementById(id).addEventListener('input', calcularDeposito);
-    });
-
-    // También recalcular al actualizar egresos
-    function recalcularYActualizar() {
-      calcularCosto();
-      calcularDeposito();
-    }
-
-    // Generar PDF con jsPDF y mostrarlo en iframe
-    function generarPDF(data) {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      // Título
-      doc.setFontSize(18);
-      doc.text('Reporte Diario de Ventas', 14, 20);
-
-      // Datos generales
-      doc.setFontSize(12);
-      doc.text(`Fecha: ${data.fecha}`, 14, 30);
-      doc.text(`Caja Inicial: $${data.cajaInicial.toFixed(2)}`, 14, 38);
-      doc.text(`Ventas en Efectivo: $${data.efectivo.toFixed(2)}`, 14, 46);
-      doc.text(`Ventas por Transferencia: $${data.transferencia.toFixed(2)}`, 14, 54);
-      doc.text(`Costo de Mercadería: $${data.costo.toFixed(2)}`, 14, 62);
-      doc.text(`Utilidad del Día: $${data.utilidad.toFixed(2)}`, 14, 70);
-      doc.text(`Monto dejado en Caja: $${data.caja.toFixed(2)}`, 14, 78);
-      doc.text(`Total a Depositar: $${data.deposito.toFixed(2)}`, 14, 86);
-
-      // Egresos en tabla
-      if (data.egresos.length > 0) {
-        doc.text('Egresos:', 14, 96);
-        const rows = data.egresos.map(e => [e.categoria, `$${e.monto.toFixed(2)}`]);
-        doc.autoTable({
-          startY: 100,
-          head: [['Categoría', 'Monto ($)']],
-          body: rows,
-          theme: 'striped',
-          headStyles: { fillColor: [52, 58, 64] },
-        });
-      }
-
-      // Guardar PDF en Blob para previsualizar
-      pdfBlob = doc.output('blob');
-
-      // Crear URL y mostrar en iframe
-      const url = URL.createObjectURL(pdfBlob);
-      iframePDF.src = url;
-
-      // Mostrar modal
-      vistaPreviaContainer.classList.remove('hidden');
-    }
-
-    // Guardar reporte en localStorage y limpiar formulario
-    document.getElementById('generarPDF').addEventListener('click', () => {
-      const fecha = document.getElementById('fecha').value;
-      if (!fecha) {
-        alert('Seleccione una fecha.');
-        return;
-      }
-
-      const cajaInicial = parseFloat(document.getElementById('cajaInicial').value) || 0;
-      const efectivo = parseFloat(document.getElementById('efectivo').value) || 0;
-      const transferencia = parseFloat(document.getElementById('transferencia').value) || 0;
-      const costo = parseFloat(document.getElementById('costo').value) || 0;
-      const utilidad = parseFloat(document.getElementById('utilidad').value) || 0;
-      const caja = parseFloat(document.getElementById('caja').value) || 0;
-      const deposito = parseFloat(document.getElementById('deposito').value) || 0;
-
-      const reporte = {
-        fecha,
-        cajaInicial,
-        efectivo,
-        transferencia,
-        costo,
-        utilidad,
-        caja,
-        deposito,
-        egresos: [...egresos]
+      const form = e.target;
+      const data = {
+        fecha: form.fecha.value,
+        ventas_efectivo: parseFloat(form.ventas_efectivo.value),
+        ventas_transferencia: parseFloat(form.ventas_transferencia.value),
+        egresos: parseFloat(form.egresos.value),
+        utilidad: parseFloat(form.utilidad.value),
+        caja_inicial: parseFloat(form.caja_inicial.value),
+        total_depositar: parseFloat(form.total_depositar.value),
       };
 
-      reportesGuardados.push(reporte);
-      localStorage.setItem('reportes', JSON.stringify(reportesGuardados));
+      const messageDiv = document.getElementById('message');
 
-      generarPDF(reporte);
-
-      // Limpiar formulario y egresos
-      egresos = [];
-      actualizarTablaEgresos();
-      document.getElementById('reporteForm').reset();
-      document.getElementById('costo').value = '';
-      document.getElementById('deposito').value = '';
-
-      // Actualizar historial si visible
-      if (!document.getElementById('historial').classList.contains('hidden')) {
-        mostrarHistorial();
-      }
-    });
-
-    // Mostrar historial
-    function mostrarHistorial() {
-      const lista = document.getElementById('listaReportes');
-      lista.innerHTML = '';
-
-      if (reportesGuardados.length === 0) {
-        lista.innerHTML = '<li class="text-gray-500">No hay reportes guardados.</li>';
-        return;
-      }
-
-      reportesGuardados.forEach((reporte, index) => {
-        const li = document.createElement('li');
-        li.className = 'p-2 bg-gray-100 rounded cursor-pointer hover:bg-gray-200';
-        li.textContent = `Reporte - Fecha: ${reporte.fecha}`;
-        li.tabIndex = 0;
-        li.setAttribute('role', 'button');
-        li.addEventListener('click', () => {
-          generarPDF(reporte);
+      try {
+        const response = await fetch('/api/save-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
         });
-        lista.appendChild(li);
-      });
-    }
 
-    // Filtrar reportes por fecha
-    document.getElementById('btnFiltrar').addEventListener('click', () => {
-      const fechaFiltro = document.getElementById('fechaFiltro').value;
-      const listaFiltrada = document.getElementById('listaFiltrada');
-      listaFiltrada.innerHTML = '';
+        const result = await response.json();
 
-      if (!fechaFiltro) {
-        listaFiltrada.innerHTML = '<li class="text-red-600">Seleccione una fecha para filtrar.</li>';
-        return;
+        if (response.ok) {
+          messageDiv.textContent = `✅ Reporte guardado correctamente (ID: ${result.id})`;
+          messageDiv.style.color = 'green';
+          form.reset();
+        } else {
+          messageDiv.textContent = `❌ Error: ${result.message || 'Error desconocido'}`;
+          messageDiv.style.color = 'red';
+        }
+      } catch (err) {
+        messageDiv.textContent = `❌ Error de red: ${err.message}`;
+        messageDiv.style.color = 'red';
       }
-
-      const filtrados = reportesGuardados.filter(r => r.fecha === fechaFiltro);
-
-      if (filtrados.length === 0) {
-        listaFiltrada.innerHTML = '<li class="text-gray-500">No hay reportes para esa fecha.</li>';
-        return;
-      }
-
-      filtrados.forEach((reporte, index) => {
-        const li = document.createElement('li');
-        li.className = 'p-2 bg-gray-100 rounded cursor-pointer hover:bg-gray-200';
-        li.textContent = `Reporte - Fecha: ${reporte.fecha}`;
-        li.tabIndex = 0;
-        li.setAttribute('role', 'button');
-        li.addEventListener('click', () => {
-          generarPDF(reporte);
-        });
-        listaFiltrada.appendChild(li);
-      });
-    });
-
-    // Mostrar sección (formulario, historial, filtrar)
-    function mostrarSeccion(seccion) {
-      ['formulario', 'historial', 'filtrar'].forEach(id => {
-        document.getElementById(id).classList.add('hidden');
-      });
-      document.getElementById(seccion).classList.remove('hidden');
-      if (seccion === 'historial') {
-        mostrarHistorial();
-      }
-      if(seccion === 'filtrar') {
-        document.getElementById('fechaFiltro').value = '';
-        document.getElementById('listaFiltrada').innerHTML = '';
-      }
-    }
-
-    // Cerrar modal PDF
-    document.getElementById('cerrarVistaPrevia').addEventListener('click', () => {
-      vistaPreviaContainer.classList.add('hidden');
-      iframePDF.src = '';
-      if(pdfBlob) {
-        URL.revokeObjectURL(iframePDF.src);
-        pdfBlob = null;
-      }
-    });
-
-    // Descargar PDF
-    document.getElementById('descargarPDF').addEventListener('click', () => {
-      if (!pdfBlob) {
-        alert('Primero debe generar un reporte para descargar.');
-        return;
-      }
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(pdfBlob);
-      a.download = 'reporte_diario.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    });
-
-    // Menu hamburguesa y overlay para móvil
-    const btnMenu = document.getElementById('btnMenu');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-
-    btnMenu.addEventListener('click', () => {
-      sidebar.classList.toggle('-translate-x-full');
-      overlay.classList.toggle('hidden');
-    });
-
-    overlay.addEventListener('click', () => {
-      sidebar.classList.add('-translate-x-full');
-      overlay.classList.add('hidden');
-    });
-
-    // Cargar historial al iniciar (para que no esté vacío al ir a historial)
-    function cargarHistorial() {
-      mostrarHistorial();
-    }
-
-    // Al cargar la página
-    document.addEventListener('DOMContentLoaded', () => {
-      mostrarSeccion('formulario');
-      actualizarTablaEgresos();
-      recalcularYActualizar();
     });
   </script>
 </body>
