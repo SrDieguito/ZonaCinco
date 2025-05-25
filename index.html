@@ -1,56 +1,140 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" >
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reporte Diario</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reporte Diario Minimalista</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Paleta personalizada dorada y gris oscuro */
+    :root {
+      --color-dorado: #d4af37;
+      --color-gris-oscuro: #121212;
+      --color-gris-medio: #2e2e2e;
+      --color-texto: #f0e6d2;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl">
-    <h1 class="text-2xl font-bold mb-6 text-center">Formulario de Reporte Diario</h1>
-    <form id="reporteForm" class="grid grid-cols-1 gap-4">
-      <input type="date" name="fecha" class="input" required />
-      <input type="number" step="0.01" name="caja_inicial" placeholder="Caja Inicial" class="input" required />
-      <input type="number" step="0.01" name="ventas_efectivo" placeholder="Ventas en Efectivo" class="input" required />
-      <input type="number" step="0.01" name="ventas_transferencia" placeholder="Ventas por Transferencia" class="input" required />
-      <input type="number" step="0.01" name="total_ventas" placeholder="Total Ventas (calculado)" class="input bg-gray-100" readonly />
+<body class="bg-[var(--color-gris-oscuro)] min-h-screen flex items-center justify-center p-6 text-[var(--color-texto)] font-sans">
 
-      <div class="flex items-center gap-2">
-        <label class="font-semibold">Egresos:</label>
-        <select id="categoria_egreso" class="input">
-          <option value="Comida">Comida</option>
-          <option value="Pago proveedor">Pago proveedor</option>
-          <option value="Transportes">Transportes</option>
-          <option value="Recreo">Recreo</option>
-          <option value="Aseo">Aseo</option>
-          <option value="Regalo prenda">Regalo prenda</option>
-          <option value="Perdida prenda">Pérdida prenda</option>
-          <option value="Otro">Otro</option>
-        </select>
-        <input type="text" id="otro_egreso" class="input" placeholder="Describir otro..." style="display: none;" />
-        <input type="number" step="0.01" id="monto_egreso" class="input w-32" placeholder="$" />
-        <button type="button" id="agregar_egreso" class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700">Agregar</button>
+  <div class="bg-[var(--color-gris-medio)] rounded-3xl shadow-xl p-8 w-full max-w-xl">
+    <h1 class="text-3xl font-bold mb-10 text-center tracking-wide" style="color: var(--color-dorado)">
+      📊 Reporte Diario
+    </h1>
+
+    <form id="reporteForm" class="space-y-6">
+
+      <!-- Fecha -->
+      <div>
+        <label for="fecha" class="block mb-2 text-lg font-semibold">📅 Fecha</label>
+        <input type="date" id="fecha" name="fecha" required
+          class="w-full rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] placeholder:text-gray-400
+          focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
       </div>
 
-      <ul id="lista_egresos" class="list-disc pl-5 text-sm text-gray-700"></ul>
+      <!-- Caja Inicial -->
+      <div>
+        <label for="caja_inicial" class="block mb-2 text-lg font-semibold">💰 Caja Inicial</label>
+        <input type="number" id="caja_inicial" name="caja_inicial" step="0.01" required
+          placeholder="0.00"
+          class="w-full rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] placeholder:text-gray-400
+          focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
+      </div>
 
-      <input type="number" step="0.01" name="cuanto_queda" placeholder="¿Cuánto queda en caja?" class="input" required />
-      <input type="number" step="0.01" name="utilidad" placeholder="Utilidad del Día" class="input" required />
-      <input type="number" step="0.01" name="total_depositar" placeholder="Total a Depositar (calculado)" class="input bg-gray-100" readonly />
+      <!-- Ventas Efectivo -->
+      <div>
+        <label for="ventas_efectivo" class="block mb-2 text-lg font-semibold">💵 Ventas en Efectivo</label>
+        <input type="number" id="ventas_efectivo" name="ventas_efectivo" step="0.01" required
+          placeholder="0.00"
+          class="w-full rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] placeholder:text-gray-400
+          focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
+      </div>
 
-      <button type="submit" class="bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition">Guardar Reporte</button>
+      <!-- Ventas Transferencia -->
+      <div>
+        <label for="ventas_transferencia" class="block mb-2 text-lg font-semibold">🏦 Ventas por Transferencia</label>
+        <input type="number" id="ventas_transferencia" name="ventas_transferencia" step="0.01" required
+          placeholder="0.00"
+          class="w-full rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] placeholder:text-gray-400
+          focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
+      </div>
+
+      <!-- Total Ventas -->
+      <div>
+        <label for="total_ventas" class="block mb-2 text-lg font-semibold">📈 Total Ventas</label>
+        <input type="number" id="total_ventas" name="total_ventas" step="0.01" readonly
+          class="w-full rounded-xl border border-gray-700 bg-[var(--color-gris-oscuro)] px-4 py-3 text-gray-400 cursor-not-allowed" />
+      </div>
+
+      <!-- Egresos -->
+      <div>
+        <label class="block mb-2 text-lg font-semibold">🧾 Egresos</label>
+        <div class="flex flex-wrap gap-3 mb-3">
+          <select id="categoria_egreso" class="flex-1 rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition">
+            <option value="Comida">Comida</option>
+            <option value="Pago proveedor">Pago proveedor</option>
+            <option value="Transportes">Transportes</option>
+            <option value="Recreo">Recreo</option>
+            <option value="Aseo">Aseo</option>
+            <option value="Regalo prenda">Regalo prenda</option>
+            <option value="Perdida prenda">Pérdida prenda</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <input type="text" id="otro_egreso" placeholder="Describir otro..." class="flex-1 rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition hidden" />
+          <input type="number" id="monto_egreso" placeholder="$0.00" step="0.01"
+            class="w-28 rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
+          <button type="button" id="agregar_egreso" class="rounded-xl bg-[var(--color-dorado)] px-5 py-3 font-semibold text-[var(--color-gris-oscuro)] hover:bg-yellow-500 shadow-lg transition-transform transform hover:scale-105 active:scale-95 select-none">
+            ➕ Agregar
+          </button>
+        </div>
+        <ul id="lista_egresos" class="list-disc list-inside space-y-1 text-[var(--color-texto)] max-h-40 overflow-auto"></ul>
+      </div>
+
+      <!-- Cuánto queda -->
+      <div>
+        <label for="cuanto_queda" class="block mb-2 text-lg font-semibold">🗃️ ¿Cuánto queda en caja?</label>
+        <input type="number" id="cuanto_queda" name="cuanto_queda" step="0.01" required
+          placeholder="0.00"
+          class="w-full rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] placeholder:text-gray-400
+          focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
+      </div>
+
+      <!-- Utilidad -->
+      <div>
+        <label for="utilidad" class="block mb-2 text-lg font-semibold">💹 Utilidad del Día</label>
+        <input type="number" id="utilidad" name="utilidad" step="0.01" required
+          placeholder="0.00"
+          class="w-full rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 text-[var(--color-texto)] placeholder:text-gray-400
+          focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
+      </div>
+
+      <!-- Total a depositar -->
+      <div>
+        <label for="total_depositar" class="block mb-2 text-lg font-semibold">🏦 Total a Depositar</label>
+        <input type="number" id="total_depositar" name="total_depositar" step="0.01" readonly
+          class="w-full rounded-xl border border-gray-700 bg-[var(--color-gris-oscuro)] px-4 py-3 text-gray-400 cursor-not-allowed" />
+      </div>
+
+      <!-- Botón Guardar -->
+      <button type="submit"
+        class="w-full rounded-xl bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-[var(--color-gris-oscuro)] font-bold py-3
+        shadow-lg hover:from-yellow-500 hover:via-yellow-600 hover:to-yellow-700
+        transition-transform transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3 select-none">
+        💾 Guardar Reporte
+      </button>
+
     </form>
-    <div id="mensaje" class="mt-4 text-center text-sm"></div>
+
+    <p id="mensaje" class="mt-6 text-center text-lg font-semibold"></p>
   </div>
 
   <script>
     let egresos = [];
 
     function calcularTotalVentas() {
-      const efectivo = parseFloat(document.querySelector('[name="ventas_efectivo"]').value) || 0;
-      const transferencia = parseFloat(document.querySelector('[name="ventas_transferencia"]').value) || 0;
-      document.querySelector('[name="total_ventas"]').value = (efectivo + transferencia).toFixed(2);
+      const efectivo = parseFloat(document.getElementById('ventas_efectivo').value) || 0;
+      const transferencia = parseFloat(document.getElementById('ventas_transferencia').value) || 0;
+      document.getElementById('total_ventas').value = (efectivo + transferencia).toFixed(2);
       calcularTotalDepositar();
     }
 
@@ -59,14 +143,14 @@
     }
 
     function calcularTotalDepositar() {
-      const cajaInicial = parseFloat(document.querySelector('[name="caja_inicial"]').value) || 0;
-      const efectivo = parseFloat(document.querySelector('[name="ventas_efectivo"]').value) || 0;
-      const transferencia = parseFloat(document.querySelector('[name="ventas_transferencia"]').value) || 0;
-      const queda = parseFloat(document.querySelector('[name="cuanto_queda"]').value) || 0;
+      const cajaInicial = parseFloat(document.getElementById('caja_inicial').value) || 0;
+      const efectivo = parseFloat(document.getElementById('ventas_efectivo').value) || 0;
+      const transferencia = parseFloat(document.getElementById('ventas_transferencia').value) || 0;
+      const queda = parseFloat(document.getElementById('cuanto_queda').value) || 0;
       const totalEgresos = calcularTotalEgresos();
 
       const total = cajaInicial + efectivo + transferencia - queda - totalEgresos;
-      document.querySelector('[name="total_depositar"]').value = total.toFixed(2);
+      document.getElementById('total_depositar').value = total.toFixed(2);
     }
 
     function renderEgresos() {
@@ -74,10 +158,12 @@
       lista.innerHTML = '';
       egresos.forEach((egreso, index) => {
         const li = document.createElement('li');
-        li.textContent = `${egreso.categoria}: $${egreso.monto.toFixed(2)}`;
+        li.className = 'flex justify-between items-center bg-[var(--color-gris-oscuro)] p-2 rounded-lg shadow-sm mb-1';
+        li.innerHTML = `<span>${egreso.categoria}</span><span class="font-semibold text-yellow-400">$${egreso.monto.toFixed(2)}</span>`;
         const btn = document.createElement('button');
         btn.textContent = '❌';
-        btn.className = 'ml-2 text-red-600';
+        btn.className = 'ml-4 text-red-500 hover:text-red-600 transition text-xl';
+        btn.title = 'Eliminar egreso';
         btn.onclick = () => {
           egresos.splice(index, 1);
           renderEgresos();
@@ -89,28 +175,45 @@
     }
 
     document.getElementById('categoria_egreso').addEventListener('change', (e) => {
-      document.getElementById('otro_egreso').style.display = e.target.value === 'Otro' ? 'block' : 'none';
+      const otroInput = document.getElementById('otro_egreso');
+      otroInput.classList.toggle('hidden', e.target.value !== 'Otro');
+      if (e.target.value !== 'Otro') otroInput.value = '';
     });
 
     document.getElementById('agregar_egreso').addEventListener('click', () => {
-      const categoria = document.getElementById('categoria_egreso').value === 'Otro'
+      const categoriaSelect = document.getElementById('categoria_egreso');
+      const categoria = categoriaSelect.value === 'Otro'
         ? document.getElementById('otro_egreso').value.trim()
-        : document.getElementById('categoria_egreso').value;
+        : categoriaSelect.value;
+
       const monto = parseFloat(document.getElementById('monto_egreso').value);
-      if (!categoria || isNaN(monto) || monto <= 0) return;
+      if (!categoria) {
+        alert('Por favor, ingresa una categoría válida');
+        return;
+      }
+      if (isNaN(monto) || monto <= 0) {
+        alert('Por favor, ingresa un monto válido');
+        return;
+      }
+
       egresos.push({ categoria, monto });
       renderEgresos();
       calcularTotalDepositar();
+
       document.getElementById('monto_egreso').value = '';
-      document.getElementById('otro_egreso').value = '';
+      if (categoriaSelect.value === 'Otro') {
+        document.getElementById('otro_egreso').value = '';
+      }
     });
 
-    document.querySelector('[name="ventas_efectivo"]').addEventListener('input', calcularTotalVentas);
-    document.querySelector('[name="ventas_transferencia"]').addEventListener('input', calcularTotalVentas);
-    document.querySelector('[name="caja_inicial"]').addEventListener('input', calcularTotalDepositar);
-    document.querySelector('[name="cuanto_queda"]').addEventListener('input', calcularTotalDepositar);
+    ['ventas_efectivo', 'ventas_transferencia', 'caja_inicial', 'cuanto_queda'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        calcularTotalVentas();
+        calcularTotalDepositar();
+      });
+    });
 
-    document.getElementById('reporteForm').addEventListener('submit', async (e) => {
+    document.getElementById('reporteForm').addEventListener('submit', async e => {
       e.preventDefault();
 
       const form = e.target;
@@ -126,7 +229,6 @@
         detalle_egresos: egresos,
       };
 
-
       try {
         const res = await fetch('/api/save-report', {
           method: 'POST',
@@ -139,30 +241,26 @@
 
         if (res.ok) {
           mensaje.textContent = '✅ Reporte guardado con éxito';
-          mensaje.className = 'text-green-600';
+          mensaje.className = 'mt-6 text-center text-lg font-semibold text-green-400';
           form.reset();
           egresos = [];
           renderEgresos();
           calcularTotalVentas();
         } else {
           mensaje.textContent = '❌ Error: ' + (result.errors ? result.errors.join(', ') : result.message);
-          mensaje.className = 'text-red-600';
+          mensaje.className = 'mt-6 text-center text-lg font-semibold text-red-500';
         }
       } catch (err) {
         console.error(err);
-        document.getElementById('mensaje').textContent = '❌ Error de red o del servidor';
-        document.getElementById('mensaje').className = 'text-red-600';
+        const mensaje = document.getElementById('mensaje');
+        mensaje.textContent = '❌ Error de red o del servidor';
+        mensaje.className = 'mt-6 text-center text-lg font-semibold text-red-500';
       }
     });
 
+    // Inicializar
     renderEgresos();
     calcularTotalVentas();
   </script>
-
-  <style>
-    .input {
-      @apply border border-gray-300 p-2 rounded-xl w-full;
-    }
-  </style>
 </body>
 </html>
