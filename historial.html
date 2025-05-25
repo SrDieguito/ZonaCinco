@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historial de Reportes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --color-dorado: #d4af37;
+      --color-gris-oscuro: #121212;
+      --color-gris-medio: #2e2e2e;
+      --color-texto: #f0e6d2;
+    }
+  </style>
+</head>
+<body class="bg-[var(--color-gris-oscuro)] text-[var(--color-texto)] min-h-screen flex flex-col">
+
+  <!-- Barra superior -->
+  <header class="bg-[var(--color-gris-medio)] shadow-md p-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold" style="color: var(--color-dorado)">📂 Historial de Reportes</h1>
+    <a href="index.html" class="text-sm text-[var(--color-dorado)] hover:underline">← Volver al reporte diario</a>
+  </header>
+
+  <!-- Filtro por fecha -->
+  <div class="p-4 max-w-3xl mx-auto">
+    <label for="filtroFecha" class="block mb-2 text-lg font-semibold">📅 Filtrar por fecha</label>
+    <input type="date" id="filtroFecha" class="w-full mb-6 rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-3 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
+    
+    <ul id="listaReportes" class="space-y-4">
+      <!-- Aquí se inyectarán los reportes -->
+    </ul>
+  </div>
+
+  <script>
+    // Simulación de datos, reemplaza con fetch a tu API
+    const reportesSimulados = [
+      { fecha: "2024-01-01", utilidad: 500, total: 1500 },
+      { fecha: "2024-01-02", utilidad: 300, total: 1300 },
+      { fecha: "2024-01-03", utilidad: 700, total: 1700 },
+    ];
+
+    const lista = document.getElementById('listaReportes');
+    const filtroFecha = document.getElementById('filtroFecha');
+
+    function renderReportes(data) {
+      lista.innerHTML = '';
+      if (data.length === 0) {
+        lista.innerHTML = '<li class="text-red-400">❌ No hay reportes para esa fecha</li>';
+        return;
+      }
+      data.forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'bg-[var(--color-gris-medio)] rounded-xl p-4 shadow-md';
+        li.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="text-lg font-semibold">🗓️ ${r.fecha}</span>
+            <span class="text-yellow-400 font-bold">💵 Utilidad: $${r.utilidad} | Total: $${r.total}</span>
+          </div>
+        `;
+        lista.appendChild(li);
+      });
+    }
+
+    // Inicial
+    renderReportes(reportesSimulados);
+
+    filtroFecha.addEventListener('change', () => {
+      const fecha = filtroFecha.value;
+      const filtrados = reportesSimulados.filter(r => r.fecha === fecha);
+      renderReportes(filtrados);
+    });
+  </script>
+</body>
+</html>
