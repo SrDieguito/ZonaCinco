@@ -33,43 +33,49 @@
   </div>
 
   <script>
-    // Simulación de datos, reemplaza con fetch a tu API
-    const reportesSimulados = [
-      { fecha: "2024-01-01", utilidad: 500, total: 1500 },
-      { fecha: "2024-01-02", utilidad: 300, total: 1300 },
-      { fecha: "2024-01-03", utilidad: 700, total: 1700 },
-    ];
+  const lista = document.getElementById('listaReportes');
+  const filtroFecha = document.getElementById('filtroFecha');
 
-    const lista = document.getElementById('listaReportes');
-    const filtroFecha = document.getElementById('filtroFecha');
-
-    function renderReportes(data) {
-      lista.innerHTML = '';
-      if (data.length === 0) {
-        lista.innerHTML = '<li class="text-red-400">❌ No hay reportes para esa fecha</li>';
-        return;
-      }
-      data.forEach(r => {
-        const li = document.createElement('li');
-        li.className = 'bg-[var(--color-gris-medio)] rounded-xl p-4 shadow-md';
-        li.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span class="text-lg font-semibold">🗓️ ${r.fecha}</span>
-            <span class="text-yellow-400 font-bold">💵 Utilidad: $${r.utilidad} | Total: $${r.total}</span>
-          </div>
-        `;
-        lista.appendChild(li);
-      });
+  async function cargarReportes(fecha = '') {
+    try {
+      const url = fecha ? `/api/reportes?fecha=${fecha}` : '/api/reportes';
+      const res = await fetch(url);
+      const data = await res.json();
+      renderReportes(data);
+    } catch (error) {
+      console.error('Error cargando reportes:', error);
+      lista.innerHTML = '<li class="text-red-400">❌ Error al cargar reportes</li>';
     }
+  }
 
-    // Inicial
-    renderReportes(reportesSimulados);
-
-    filtroFecha.addEventListener('change', () => {
-      const fecha = filtroFecha.value;
-      const filtrados = reportesSimulados.filter(r => r.fecha === fecha);
-      renderReportes(filtrados);
+  function renderReportes(data) {
+    lista.innerHTML = '';
+    if (data.length === 0) {
+      lista.innerHTML = '<li class="text-red-400">❌ No hay reportes para esa fecha</li>';
+      return;
+    }
+    data.forEach(r => {
+      const li = document.createElement('li');
+      li.className = 'bg-[var(--color-gris-medio)] rounded-xl p-4 shadow-md';
+      li.innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="text-lg font-semibold">🗓️ ${r.fecha}</span>
+          <span class="text-yellow-400 font-bold">💵 Utilidad: $${r.utilidad} | Total: $${r.total_depositar}</span>
+        </div>
+      `;
+      lista.appendChild(li);
     });
+  }
+
+  filtroFecha.addEventListener('change', () => {
+    const fecha = filtroFecha.value;
+    cargarReportes(fecha);
+  });
+
+  // Inicial: cargar todos
+  cargarReportes();
+</script>
+
   </script>
 </body>
 </html>
