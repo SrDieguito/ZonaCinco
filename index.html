@@ -154,6 +154,8 @@
   </div>
 
   <script>
+
+  document.addEventListener('DOMContentLoaded', () => {
     let egresos = [];
 
     function calcularTotalVentas() {
@@ -316,7 +318,11 @@ btnCerrar.addEventListener('click', () => {
   sidebar.classList.add('-translate-x-full');
 });
 
-    
+  
+  renderEgresos();
+  calcularTotalVentas();  
+
+  });
   </script>
 
 </body>
