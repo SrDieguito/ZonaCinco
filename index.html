@@ -290,5 +290,21 @@ document.getElementById('filtroFecha').addEventListener('change', () => {
 });
 
   </script>
+
+  <!-- Panel lateral historial -->
+<button id="toggleHistorial" class="fixed top-4 right-4 z-40 bg-[var(--color-dorado)] text-[var(--color-gris-oscuro)] px-4 py-2 rounded-xl shadow-lg hover:bg-yellow-500 transition">
+  📜 Historial
+</button>
+
+<div id="sidebarHistorial" class="fixed top-0 right-0 w-80 h-full bg-[var(--color-gris-medio)] text-[var(--color-texto)] shadow-2xl transform translate-x-full transition-transform duration-300 z-50 p-6">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-bold" style="color: var(--color-dorado)">📅 Historial</h2>
+    <button id="cerrarHistorial" class="text-red-500 text-xl hover:text-red-600 transition">✖️</button>
+  </div>
+  <label for="filtroFecha" class="block mb-2 font-semibold">Filtrar por fecha</label>
+  <input type="date" id="filtroFecha" class="w-full rounded-xl border border-[var(--color-dorado)] bg-transparent px-4 py-2 mb-4 text-[var(--color-texto)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-dorado)] transition" />
+  <ul id="resultadosHistorial" class="space-y-2 max-h-[65vh] overflow-y-auto"></ul>
+</div>
+
 </body>
 </html>
