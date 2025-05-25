@@ -154,176 +154,154 @@
   </div>
 
   <script>
+document.addEventListener('DOMContentLoaded', () => {
+  let egresos = [];
 
-  document.addEventListener('DOMContentLoaded', () => {
-    let egresos = [];
+  function calcularTotalVentas() {
+    const efectivo = parseFloat(document.getElementById('ventas_efectivo').value) || 0;
+    const transferencia = parseFloat(document.getElementById('ventas_transferencia').value) || 0;
+    document.getElementById('total_ventas').value = (efectivo + transferencia).toFixed(2);
+    calcularTotalDepositar();
+  }
 
-    function calcularTotalVentas() {
-      const efectivo = parseFloat(document.getElementById('ventas_efectivo').value) || 0;
-      const transferencia = parseFloat(document.getElementById('ventas_transferencia').value) || 0;
-      document.getElementById('total_ventas').value = (efectivo + transferencia).toFixed(2);
-      calcularTotalDepositar();
-    }
+  function calcularTotalEgresos() {
+    return egresos.reduce((acc, egreso) => acc + egreso.monto, 0);
+  }
 
-    function calcularTotalEgresos() {
-      return egresos.reduce((acc, egreso) => acc + egreso.monto, 0);
-    }
+  function calcularTotalDepositar() {
+    const cajaInicial = parseFloat(document.getElementById('caja_inicial').value) || 0;
+    const efectivo = parseFloat(document.getElementById('ventas_efectivo').value) || 0;
+    const transferencia = parseFloat(document.getElementById('ventas_transferencia').value) || 0;
+    const queda = parseFloat(document.getElementById('cuanto_queda').value) || 0;
+    const totalEgresos = calcularTotalEgresos();
 
-    function calcularTotalDepositar() {
-      const cajaInicial = parseFloat(document.getElementById('caja_inicial').value) || 0;
-      const efectivo = parseFloat(document.getElementById('ventas_efectivo').value) || 0;
-      const transferencia = parseFloat(document.getElementById('ventas_transferencia').value) || 0;
-      const queda = parseFloat(document.getElementById('cuanto_queda').value) || 0;
-      const totalEgresos = calcularTotalEgresos();
+    const total = cajaInicial + efectivo + transferencia - queda - totalEgresos;
+    document.getElementById('total_depositar').value = total.toFixed(2);
+  }
 
-      const total = cajaInicial + efectivo + transferencia - queda - totalEgresos;
-      document.getElementById('total_depositar').value = total.toFixed(2);
-    }
-
-    function renderEgresos() {
-      const lista = document.getElementById('lista_egresos');
-      lista.innerHTML = '';
-      egresos.forEach((egreso, index) => {
-        const li = document.createElement('li');
-        li.className = 'flex justify-between items-center bg-[var(--color-gris-oscuro)] p-2 rounded-lg shadow-sm mb-1';
-        li.innerHTML = `<span>${egreso.categoria}</span><span class="font-semibold text-yellow-400">$${egreso.monto.toFixed(2)}</span>`;
-        const btn = document.createElement('button');
-        btn.textContent = '❌';
-        btn.className = 'ml-4 text-red-500 hover:text-red-600 transition text-xl';
-        btn.title = 'Eliminar egreso';
-        btn.onclick = () => {
-          egresos.splice(index, 1);
-          renderEgresos();
-          calcularTotalDepositar();
-        };
-        li.appendChild(btn);
-        lista.appendChild(li);
-      });
-    }
-
-    document.getElementById('categoria_egreso').addEventListener('change', (e) => {
-      const otroInput = document.getElementById('otro_egreso');
-      otroInput.classList.toggle('hidden', e.target.value !== 'Otro');
-      if (e.target.value !== 'Otro') otroInput.value = '';
-    });
-
-    document.getElementById('agregar_egreso').addEventListener('click', () => {
-      const categoriaSelect = document.getElementById('categoria_egreso');
-      const categoria = categoriaSelect.value === 'Otro'
-        ? document.getElementById('otro_egreso').value.trim()
-        : categoriaSelect.value;
-
-      const monto = parseFloat(document.getElementById('monto_egreso').value);
-      if (!categoria) {
-        alert('Por favor, ingresa una categoría válida');
-        return;
-      }
-      if (isNaN(monto) || monto <= 0) {
-        alert('Por favor, ingresa un monto válido');
-        return;
-      }
-
-      egresos.push({ categoria, monto });
-      renderEgresos();
-      calcularTotalDepositar();
-
-      document.getElementById('monto_egreso').value = '';
-      if (categoriaSelect.value === 'Otro') {
-        document.getElementById('otro_egreso').value = '';
-      }
-    });
-
-    ['ventas_efectivo', 'ventas_transferencia', 'caja_inicial', 'cuanto_queda'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
-        calcularTotalVentas();
+  function renderEgresos() {
+    const lista = document.getElementById('lista_egresos');
+    lista.innerHTML = '';
+    egresos.forEach((egreso, index) => {
+      const li = document.createElement('li');
+      li.className = 'flex justify-between items-center bg-[var(--color-gris-oscuro)] p-2 rounded-lg shadow-sm mb-1';
+      li.innerHTML = `<span>${egreso.categoria}</span><span class="font-semibold text-yellow-400">$${egreso.monto.toFixed(2)}</span>`;
+      const btn = document.createElement('button');
+      btn.textContent = '❌';
+      btn.className = 'ml-4 text-red-500 hover:text-red-600 transition text-xl';
+      btn.title = 'Eliminar egreso';
+      btn.onclick = () => {
+        egresos.splice(index, 1);
+        renderEgresos();
         calcularTotalDepositar();
-      });
-    });
-
-    document.getElementById('reporteForm').addEventListener('submit', async e => {
-      e.preventDefault();
-
-      const form = e.target;
-      const data = {
-        fecha: form.fecha.value,
-        caja_inicial: parseFloat(form.caja_inicial.value),
-        ventas_efectivo: parseFloat(form.ventas_efectivo.value),
-        ventas_transferencia: parseFloat(form.ventas_transferencia.value),
-        egresos: calcularTotalEgresos(),
-        utilidad: parseFloat(form.utilidad.value),
-        cuanto_queda: parseFloat(form.cuanto_queda.value),
-        total_depositar: parseFloat(form.total_depositar.value),
-        detalle_egresos: egresos,
       };
+      li.appendChild(btn);
+      lista.appendChild(li);
+    });
+  }
 
-      try {
-        const res = await fetch('/api/save-report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        });
+  document.getElementById('categoria_egreso').addEventListener('change', (e) => {
+    const otroInput = document.getElementById('otro_egreso');
+    otroInput.classList.toggle('hidden', e.target.value !== 'Otro');
+    if (e.target.value !== 'Otro') otroInput.value = '';
+  });
 
-        const result = await res.json();
-        const mensaje = document.getElementById('mensaje');
+  document.getElementById('agregar_egreso').addEventListener('click', () => {
+    const categoriaSelect = document.getElementById('categoria_egreso');
+    const categoria = categoriaSelect.value === 'Otro'
+      ? document.getElementById('otro_egreso').value.trim()
+      : categoriaSelect.value;
 
-        if (res.ok) {
-          mensaje.textContent = '✅ Reporte guardado con éxito';
-          mensaje.className = 'mt-6 text-center text-lg font-semibold text-green-400';
-          form.reset();
-          egresos = [];
-          renderEgresos();
-          calcularTotalVentas();
-        } else {
-          mensaje.textContent = '❌ Error: ' + (result.errors ? result.errors.join(', ') : result.message);
-          mensaje.className = 'mt-6 text-center text-lg font-semibold text-red-500';
-        }
-      } catch (err) {
-        console.error(err);
-        const mensaje = document.getElementById('mensaje');
-        mensaje.textContent = '❌ Error de red o del servidor';
+    const monto = parseFloat(document.getElementById('monto_egreso').value);
+    if (!categoria) {
+      alert('Por favor, ingresa una categoría válida');
+      return;
+    }
+    if (isNaN(monto) || monto <= 0) {
+      alert('Por favor, ingresa un monto válido');
+      return;
+    }
+
+    egresos.push({ categoria, monto });
+    renderEgresos();
+    calcularTotalDepositar();
+
+    document.getElementById('monto_egreso').value = '';
+    if (categoriaSelect.value === 'Otro') {
+      document.getElementById('otro_egreso').value = '';
+    }
+  });
+
+  ['ventas_efectivo', 'ventas_transferencia', 'caja_inicial', 'cuanto_queda'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      calcularTotalVentas();
+      calcularTotalDepositar();
+    });
+  });
+
+  document.getElementById('reporteForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const form = e.target;
+    const data = {
+      fecha: form.fecha.value,
+      caja_inicial: parseFloat(form.caja_inicial.value),
+      ventas_efectivo: parseFloat(form.ventas_efectivo.value),
+      ventas_transferencia: parseFloat(form.ventas_transferencia.value),
+      egresos: calcularTotalEgresos(),
+      utilidad: parseFloat(form.utilidad.value),
+      cuanto_queda: parseFloat(form.cuanto_queda.value),
+      total_depositar: parseFloat(form.total_depositar.value),
+      detalle_egresos: egresos,
+    };
+
+    try {
+      const res = await fetch('/api/save-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+      const mensaje = document.getElementById('mensaje');
+
+      if (res.ok) {
+        mensaje.textContent = '✅ Reporte guardado con éxito';
+        mensaje.className = 'mt-6 text-center text-lg font-semibold text-green-400';
+        form.reset();
+        egresos = [];
+        renderEgresos();
+        calcularTotalVentas();
+      } else {
+        mensaje.textContent = '❌ Error: ' + (result.errors ? result.errors.join(', ') : result.message);
         mensaje.className = 'mt-6 text-center text-lg font-semibold text-red-500';
       }
-    });
-
-    // Inicializar
-    renderEgresos();
-    calcularTotalVentas();
-
-// Lógica del historial (reemplaza con fetch real si conectas a DB)
-document.getElementById('filtroFecha').addEventListener('change', () => {
-  const fecha = document.getElementById('filtroFecha').value;
-  const resultados = document.getElementById('resultadosHistorial');
-  resultados.innerHTML = '';
-
-  // Aquí iría un fetch a tu API, este es un ejemplo simulado:
-  if (fecha === '2024-01-01') {
-    resultados.innerHTML += `<li>🧾 Reporte del 2024-01-01 - Utilidad: $500</li>`;
-  } else {
-    resultados.innerHTML = `<li>❌ No hay reportes para esa fecha</li>`;
-  }
-});
-
-// Toggle sidebar mobile
-const sidebar = document.getElementById('sidebar');
-const btnMenu = document.getElementById('btnmenu');
-const btnCerrar = document.getElementById('btncerrar');
-
-btnMenu.addEventListener('click', () => {
-  sidebar.classList.remove('-translate-x-full');
-  sidebar.classList.add('translate-x-0');
-});
-
-btnCerrar.addEventListener('click', () => {
-  sidebar.classList.remove('translate-x-0');
-  sidebar.classList.add('-translate-x-full');
-});
-
-  
-  renderEgresos();
-  calcularTotalVentas();  
-
+    } catch (err) {
+      console.error(err);
+      const mensaje = document.getElementById('mensaje');
+      mensaje.textContent = '❌ Error de red o del servidor';
+      mensaje.className = 'mt-6 text-center text-lg font-semibold text-red-500';
+    }
   });
-  </script>
+
+  // 👉 CORREGIDO: IDs correctos y DOM ya cargado
+  const sidebar = document.getElementById('sidebar');
+  const btnMenu = document.getElementById('btnMenu');
+  const btnCerrar = document.getElementById('btnCerrar');
+
+  btnMenu.addEventListener('click', () => {
+    sidebar.classList.remove('-translate-x-full');
+    sidebar.classList.add('translate-x-0');
+  });
+
+  btnCerrar.addEventListener('click', () => {
+    sidebar.classList.remove('translate-x-0');
+    sidebar.classList.add('-translate-x-full');
+  });
+
+  renderEgresos();
+  calcularTotalVentas();
+});
+</script>
 
 </body>
 </html>
