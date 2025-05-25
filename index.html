@@ -289,15 +289,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnMenu = document.getElementById('btnMenu');
   const btnCerrar = document.getElementById('btnCerrar');
 
-  btnMenu.addEventListener('click', () => {
-    sidebar.classList.remove('-translate-x-full');
-    sidebar.classList.add('translate-x-0');
-  });
+btnMenu.addEventListener('click', () => {
+  sidebar.classList.remove('-translate-x-full');
+  sidebar.classList.add('translate-x-0');
+  btnMenu.classList.add('hidden'); // Ocultar botón hamburguesa
+});
 
-  btnCerrar.addEventListener('click', () => {
-    sidebar.classList.remove('translate-x-0');
-    sidebar.classList.add('-translate-x-full');
-  });
+btnCerrar.addEventListener('click', () => {
+  sidebar.classList.remove('translate-x-0');
+  sidebar.classList.add('-translate-x-full');
+  btnMenu.classList.remove('hidden'); // Mostrarlo otra vez
+});
+
 
   renderEgresos();
   calcularTotalVentas();
