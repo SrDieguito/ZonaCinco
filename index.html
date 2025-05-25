@@ -261,6 +261,34 @@
     // Inicializar
     renderEgresos();
     calcularTotalVentas();
+
+    // Toggle del panel lateral
+const sidebar = document.getElementById('sidebarHistorial');
+const toggleBtn = document.getElementById('toggleHistorial');
+const cerrarBtn = document.getElementById('cerrarHistorial');
+
+toggleBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('translate-x-full');
+});
+
+cerrarBtn.addEventListener('click', () => {
+  sidebar.classList.add('translate-x-full');
+});
+
+// Lógica del historial (reemplaza con fetch real si conectas a DB)
+document.getElementById('filtroFecha').addEventListener('change', () => {
+  const fecha = document.getElementById('filtroFecha').value;
+  const resultados = document.getElementById('resultadosHistorial');
+  resultados.innerHTML = '';
+
+  // Aquí iría un fetch a tu API, este es un ejemplo simulado:
+  if (fecha === '2024-01-01') {
+    resultados.innerHTML += `<li>🧾 Reporte del 2024-01-01 - Utilidad: $500</li>`;
+  } else {
+    resultados.innerHTML = `<li>❌ No hay reportes para esa fecha</li>`;
+  }
+});
+
   </script>
 </body>
 </html>
