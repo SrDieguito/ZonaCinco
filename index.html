@@ -17,10 +17,15 @@
 </head>
 <body class="bg-[var(--color-gris-oscuro)] min-h-screen flex items-center justify-center pl-72 pr-6 py-6 text-[var(--color-texto)] font-sans">
 
+  <!-- Botón hamburguesa solo móvil -->
+<button id="btnMenu" class="fixed top-4 left-4 z-30 md:hidden p-2 rounded-md bg-[var(--color-dorado)] text-[var(--color-gris-oscuro)] shadow-lg">
+  ☰
+</button>
+
 
   <!-- Sidebar fija -->
-  <aside class="fixed top-0 left-0 h-screen w-64 bg-[var(--color-gris-medio)] p-6 space-y-4 shadow-lg z-10">
-    <h2 class="text-xl font-bold text-[var(--color-dorado)] mb-6 flex items-center gap-2">
+  <aside id="sidebar" class="fixed top-0 left-0 h-screen w-64 bg-[var(--color-gris-medio)] p-6 space-y-4       shadow-lg z-20
+  transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">    <h2 class="text-xl font-bold text-[var(--color-dorado)] mb-6 flex items-center gap-2">
       📊 <span>Dashboard</span>
     </h2>
     <nav class="flex flex-col gap-4">
@@ -31,6 +36,10 @@
         📁 Historial de Reportes
       </a>
     </nav>
+     <!-- Botón cerrar solo móvil dentro del sidebar -->
+  <button id="btnCerrar" class="md:hidden mb-6 p-2 rounded-md bg-[var(--color-dorado)] text-[var(--color-gris-oscuro)] shadow-lg">
+    ✕ Cerrar
+  </button>
   </aside>
 
   <div class="bg-[var(--color-gris-medio)] rounded-3xl shadow-xl p-8 w-full max-w-xl">
@@ -305,8 +314,20 @@ document.getElementById('filtroFecha').addEventListener('change', () => {
   }
 });
 
-  </script>
+      // Toggle sidebar mobile
+  const sidebar = document.getElementById('sidebar');
+  const btnMenu = document.getElementById('btnMenu');
+  const btnCerrar = document.getElementById('btnCerrar');
 
+  btnMenu.addEventListener('click', () => {
+    sidebar.classList.remove('-translate-x-full');
+  });
+
+  btnCerrar.addEventListener('click', () => {
+    sidebar.classList.add('-translate-x-full');
+  });
+    
+  </script>
 
 </body>
 </html>
