@@ -31,8 +31,27 @@ export default async function handler(req, res) {
       console.error('Error guardando egreso:', error);
       res.status(500).json({ message: 'Error al guardar egreso' });
     }
+
+  } else if (req.method === 'GET') {
+    const { fecha } = req.query;
+
+    if (!fecha) {
+      return res.status(400).json({ message: 'Falta el parámetro "fecha"' });
+    }
+
+    try {
+      const [rows] = await pool.query(
+        'SELECT categoria, monto FROM egresos WHERE fecha = ?',
+        [fecha]
+      );
+      res.status(200).json(rows);
+    } catch (error) {
+      console.error('Error al obtener egresos:', error);
+      res.status(500).json({ message: 'Error al obtener egresos' });
+    }
+
   } else {
-    res.setHeader('Allow', ['POST']);
+    res.setHeader('Allow', ['POST', 'GET']);
     res.status(405).end(`Método ${req.method} no permitido`);
   }
 }

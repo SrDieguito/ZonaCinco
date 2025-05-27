@@ -158,31 +158,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   let egresos = [];
 
-  // Al cambiar la fecha, cargar egresos existentes
-document.getElementById('fecha').addEventListener('change', async (e) => {
-  const fecha = e.target.value;
-  if (!fecha) return;
-
-  try {
-    const res = await fetch(`/api/egresos?fecha=${fecha}`);
-    const data = await res.json();
-
-    if (res.ok && Array.isArray(data)) {
-      egresos = data;
-      renderEgresos();
-      calcularTotalDepositar();
-    } else {
-      egresos = [];
-      renderEgresos();
-      console.warn('No se encontraron egresos para esta fecha.');
-    }
-  } catch (error) {
-    console.error('Error al cargar egresos:', error);
-    egresos = [];
-    renderEgresos();
-  }
-});
-
+  
 
   function calcularTotalVentas() {
     const efectivo = parseFloat(document.getElementById('ventas_efectivo').value) || 0;
@@ -351,6 +327,32 @@ async function guardarEgresoServidor(egreso, fecha) {
     alert('❌ Error de red al guardar el egreso.');
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const hoy = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+  fetch(`/api/egresos?fecha=${hoy}`)
+    .then(res => res.json())
+    .then(data => {
+      const lista = document.getElementById('lista_egresos');
+      lista.innerHTML = '';
+
+      if (!data.length) {
+        lista.innerHTML = '<li>No hay egresos registrados hoy</li>';
+        return;
+      }
+
+      data.forEach(egreso => {
+        const li = document.createElement('li');
+        li.textContent = `${egreso.categoria} - $${parseFloat(egreso.monto).toFixed(2)}`;
+        lista.appendChild(li);
+      });
+    })
+    .catch(error => {
+      console.error('Error al obtener egresos:', error);
+    });
+});
+
 </script>
 
 
