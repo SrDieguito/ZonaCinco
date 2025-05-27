@@ -1,23 +1,25 @@
-async function cargarEgresosPorFecha(fecha) {
-  try {
-    const res = await fetch(`/api/egresos?fecha=${fecha}`);
-    const data = await res.json();
-    egresos = data || [];
-    renderEgresos();
-    calcularTotalDepositar();
-  } catch (error) {
-    console.error('Error al cargar egresos:', error);
-  }
-}
+const express = require('express');
+const app = express();
+app.use(express.json());
 
-async function guardarEgresoServidor(egreso, fecha) {
-  try {
-    await fetch('/api/egresos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...egreso, fecha }),
-    });
-  } catch (error) {
-    console.error('Error al guardar egreso:', error);
+let egresosDB = []; // Simulación DB en memoria
+
+// Obtener egresos por fecha
+app.get('/api/egresos', (req, res) => {
+  const fecha = req.query.fecha;
+  if (!fecha) return res.status(400).json({ message: 'Falta la fecha' });
+  const egresos = egresosDB.filter(e => e.fecha === fecha);
+  res.json(egresos);
+});
+
+// Agregar un egreso
+app.post('/api/egresos', (req, res) => {
+  const { categoria, monto, fecha } = req.body;
+  if (!categoria || !monto || !fecha) {
+    return res.status(400).json({ message: 'Datos incompletos' });
   }
-}
+  egresosDB.push({ categoria, monto, fecha });
+  res.status(201).json({ message: 'Egreso guardado' });
+});
+
+app.listen(3000, () => console.log('Servidor corriendo en puerto 3000'));
