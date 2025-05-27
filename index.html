@@ -154,7 +154,7 @@
     <p id="mensaje" class="mt-6 text-center text-lg font-semibold"></p>
   </div>
 
-  <script>
+<script>
 document.addEventListener('DOMContentLoaded', () => {
   let egresos = [];
 
@@ -207,25 +207,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.value !== 'Otro') otroInput.value = '';
   });
 
-  document.getElementById('agregar_egreso').addEventListener('click', () => {
+  document.getElementById('agregar_egreso').addEventListener('click', async () => {
     const categoriaSelect = document.getElementById('categoria_egreso');
     const categoria = categoriaSelect.value === 'Otro'
       ? document.getElementById('otro_egreso').value.trim()
       : categoriaSelect.value;
 
     const monto = parseFloat(document.getElementById('monto_egreso').value);
-    if (!categoria) {
-      alert('Por favor, ingresa una categoría válida');
-      return;
-    }
-    if (isNaN(monto) || monto <= 0) {
-      alert('Por favor, ingresa un monto válido');
-      return;
-    }
+    const fecha = document.getElementById('fecha').value;
 
-    egresos.push({ categoria, monto });
+    if (!categoria) return alert('Por favor, ingresa una categoría válida');
+    if (isNaN(monto) || monto <= 0) return alert('Por favor, ingresa un monto válido');
+    if (!fecha) return alert('Primero selecciona una fecha');
+
+    const nuevoEgreso = { categoria, monto };
+    egresos.push(nuevoEgreso);
     renderEgresos();
     calcularTotalDepositar();
+
+    await guardarEgresoServidor(nuevoEgreso, fecha);
 
     document.getElementById('monto_egreso').value = '';
     if (categoriaSelect.value === 'Otro') {
@@ -284,28 +284,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 👉 CORREGIDO: IDs correctos y DOM ya cargado
+  // Código sidebar móvil
   const sidebar = document.getElementById('sidebar');
   const btnMenu = document.getElementById('btnMenu');
   const btnCerrar = document.getElementById('btnCerrar');
 
-btnMenu.addEventListener('click', () => {
-  sidebar.classList.remove('-translate-x-full');
-  sidebar.classList.add('translate-x-0');
-  btnMenu.classList.add('hidden'); // Ocultar botón hamburguesa
-});
+  btnMenu.addEventListener('click', () => {
+    sidebar.classList.remove('-translate-x-full');
+    sidebar.classList.add('translate-x-0');
+    btnMenu.classList.add('hidden'); // Ocultar botón hamburguesa
+  });
 
-btnCerrar.addEventListener('click', () => {
-  sidebar.classList.remove('translate-x-0');
-  sidebar.classList.add('-translate-x-full');
-  btnMenu.classList.remove('hidden'); // Mostrarlo otra vez
-});
+  btnCerrar.addEventListener('click', () => {
+    sidebar.classList.remove('translate-x-0');
+    sidebar.classList.add('-translate-x-full');
+    btnMenu.classList.remove('hidden'); // Mostrarlo otra vez
+  });
 
-
+  // Inicializa la UI
   renderEgresos();
   calcularTotalVentas();
 });
+
+// Función fuera del DOMContentLoaded porque no usa elementos del DOM directamente
+async function guardarEgresoServidor(egreso, fecha) {
+  try {
+    const res = await fetch('/api/agregar-egreso', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...egreso, fecha }),
+    });
+
+    if (!res.ok) {
+      const result = await res.json();
+      console.error('Error al guardar egreso:', result.message || result);
+      alert('❌ No se pudo guardar el egreso en el servidor.');
+    }
+  } catch (err) {
+    console.error('Error de red al guardar egreso:', err);
+    alert('❌ Error de red al guardar el egreso.');
+  }
+}
 </script>
+
 
 </body>
 </html>
