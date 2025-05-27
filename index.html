@@ -158,6 +158,32 @@
 document.addEventListener('DOMContentLoaded', () => {
   let egresos = [];
 
+  // Al cambiar la fecha, cargar egresos existentes
+document.getElementById('fecha').addEventListener('change', async (e) => {
+  const fecha = e.target.value;
+  if (!fecha) return;
+
+  try {
+    const res = await fetch(`/api/egresos?fecha=${fecha}`);
+    const data = await res.json();
+
+    if (res.ok && Array.isArray(data)) {
+      egresos = data;
+      renderEgresos();
+      calcularTotalDepositar();
+    } else {
+      egresos = [];
+      renderEgresos();
+      console.warn('No se encontraron egresos para esta fecha.');
+    }
+  } catch (error) {
+    console.error('Error al cargar egresos:', error);
+    egresos = [];
+    renderEgresos();
+  }
+});
+
+
   function calcularTotalVentas() {
     const efectivo = parseFloat(document.getElementById('ventas_efectivo').value) || 0;
     const transferencia = parseFloat(document.getElementById('ventas_transferencia').value) || 0;
