@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Función fuera del DOMContentLoaded porque no usa elementos del DOM directamente
 async function guardarEgresoServidor(egreso, fecha) {
   try {
-    const res = await fetch('/api/agregar-egreso', {
+    const res = await fetch('/api/egresos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...egreso, fecha }),
