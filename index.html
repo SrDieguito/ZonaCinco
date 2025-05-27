@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const queda = parseFloat(document.getElementById('cuanto_queda').value) || 0;
     const totalEgresos = calcularTotalEgresos();
 
-    const total = cajaInicial + efectivo + transferencia - queda - totalEgresos;
+    const total = cajaInicial + efectivo - queda - totalEgresos;
     document.getElementById('total_depositar').value = total.toFixed(2);
   }
 

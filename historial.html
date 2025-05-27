@@ -96,7 +96,9 @@
           <p><strong>📈 Utilidad:</strong> $${r.utilidad}</p>
           <p><strong>💼 Caja Inicial:</strong> $${r.caja_inicial ?? 'N/A'}</p>
           <p><strong>💵 Cuánto Queda:</strong> $${r.cuanto_queda ?? 'N/A'}</p>
-          <p><strong>📤 Total a Depositar:</strong> <span style="color: #d4af37;">$${r.total_depositar}</span></p>
+          const totalAdepositarReal = r.total_depositar - (r.ventas_transferencia ?? 0);
+          <p><strong>📤 Total a Depositar:</strong> <span style="color: #d4af37;">$${totalAdepositarReal}</span></p>
+
           ${r.detalle_egresos && r.detalle_egresos.length ? `
             <h3 style="margin-top: 20px; color: #d4af37;">📌 Detalle de Egresos</h3>
             <ul>
