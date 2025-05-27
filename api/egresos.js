@@ -1,25 +1,37 @@
-const express = require('express');
-const app = express();
-app.use(express.json());
+// api/egresos.js
 
-let egresosDB = []; // Simulación DB en memoria
+import mysql from 'mysql2/promise';
 
-// Obtener egresos por fecha
-app.get('/api/egresos', (req, res) => {
-  const fecha = req.query.fecha;
-  if (!fecha) return res.status(400).json({ message: 'Falta la fecha' });
-  const egresos = egresosDB.filter(e => e.fecha === fecha);
-  res.json(egresos);
+const pool = mysql.createPool({
+  host: 'TU_HOST',
+  user: 'TU_USUARIO',
+  password: 'TU_PASSWORD',
+  database: 'TU_BASE_DE_DATOS',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-// Agregar un egreso
-app.post('/api/egresos', (req, res) => {
-  const { categoria, monto, fecha } = req.body;
-  if (!categoria || !monto || !fecha) {
-    return res.status(400).json({ message: 'Datos incompletos' });
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    const { categoria, monto, fecha } = req.body;
+
+    if (!categoria || !monto || !fecha) {
+      return res.status(400).json({ message: 'Datos incompletos' });
+    }
+
+    try {
+      const [result] = await pool.query(
+        'INSERT INTO egresos (categoria, monto, fecha) VALUES (?, ?, ?)',
+        [categoria, monto, fecha]
+      );
+      res.status(201).json({ message: 'Egreso guardado', id: result.insertId });
+    } catch (error) {
+      console.error('Error guardando egreso:', error);
+      res.status(500).json({ message: 'Error al guardar egreso' });
+    }
+  } else {
+    res.setHeader('Allow', ['POST']);
+    res.status(405).end(`Método ${req.method} no permitido`);
   }
-  egresosDB.push({ categoria, monto, fecha });
-  res.status(201).json({ message: 'Egreso guardado' });
-});
-
-app.listen(3000, () => console.log('Servidor corriendo en puerto 3000'));
+}
