@@ -82,40 +82,40 @@
     const reportesGuardados = [];
 
     function generarPDF(index) {
-      const r = reportesGuardados[index];
+  const r = reportesGuardados[index];
+  const totalAdepositarReal = r.total_depositar - (r.ventas_transferencia ?? 0);
 
-      const contenido = document.createElement('div');
-      contenido.innerHTML = `
-        <div style="font-family: Arial; padding: 30px; width: 600px; color: #333; border: 2px solid #d4af37; border-radius: 12px;">
-          <h1 style="color: #d4af37; text-align: center;">📊 Reporte Diario</h1>
-          <hr style="margin: 10px 0 20px; border-color: #d4af37;">
-          <p><strong>📅 Fecha:</strong> ${r.fecha}</p>
-          <p><strong>💰 Ventas en Efectivo:</strong> $${r.ventas_efectivo ?? 'N/A'}</p>
-          <p><strong>🏦 Ventas por Transferencia:</strong> $${r.ventas_transferencia ?? 'N/A'}</p>
-          <p><strong>📉 Egresos:</strong> $${r.egresos ?? 'N/A'}</p>
-          <p><strong>📈 Utilidad:</strong> $${r.utilidad}</p>
-          <p><strong>💼 Caja Inicial:</strong> $${r.caja_inicial ?? 'N/A'}</p>
-          <p><strong>💵 Cuánto Queda:</strong> $${r.cuanto_queda ?? 'N/A'}</p>
-          const totalAdepositarReal = r.total_depositar - (r.ventas_transferencia ?? 0);
-          <p><strong>📤 Total a Depositar:</strong> <span style="color: #d4af37;">$${totalAdepositarReal}</span></p>
+  const contenido = document.createElement('div');
+  contenido.innerHTML = `
+    <div style="font-family: Arial; padding: 30px; width: 600px; color: #333; border: 2px solid #d4af37; border-radius: 12px;">
+      <h1 style="color: #d4af37; text-align: center;">📊 Reporte Diario</h1>
+      <hr style="margin: 10px 0 20px; border-color: #d4af37;">
+      <p><strong>📅 Fecha:</strong> ${r.fecha}</p>
+      <p><strong>💰 Ventas en Efectivo:</strong> $${r.ventas_efectivo ?? 'N/A'}</p>
+      <p><strong>🏦 Ventas por Transferencia:</strong> $${r.ventas_transferencia ?? 'N/A'}</p>
+      <p><strong>📉 Egresos:</strong> $${r.egresos ?? 'N/A'}</p>
+      <p><strong>📈 Utilidad:</strong> $${r.utilidad}</p>
+      <p><strong>💼 Caja Inicial:</strong> $${r.caja_inicial ?? 'N/A'}</p>
+      <p><strong>💵 Cuánto Queda:</strong> $${r.cuanto_queda ?? 'N/A'}</p>
+      <p><strong>📤 Total a Depositar:</strong> <span style="color: #d4af37;">$${totalAdepositarReal}</span></p>
 
-          ${r.detalle_egresos && r.detalle_egresos.length ? `
-            <h3 style="margin-top: 20px; color: #d4af37;">📌 Detalle de Egresos</h3>
-            <ul>
-              ${r.detalle_egresos.map(e => `<li>🔸 ${e.categoria}: $${e.monto}</li>`).join('')}
-            </ul>
-          ` : ''}
-        </div>
-      `;
+      ${r.detalle_egresos && r.detalle_egresos.length ? `
+        <h3 style="margin-top: 20px; color: #d4af37;">📌 Detalle de Egresos</h3>
+        <ul>
+          ${r.detalle_egresos.map(e => `<li>🔸 ${e.categoria}: $${e.monto}</li>`).join('')}
+        </ul>
+      ` : ''}
+    </div>
+  `;
 
-      html2pdf().from(contenido).set({
-        margin: 0.5,
-        filename: `reporte_${r.fecha}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-      }).output('dataurlnewwindow'); // Previsualiza en una nueva pestaña
-    }
+  html2pdf().from(contenido).set({
+    margin: 0.5,
+    filename: `reporte_${r.fecha}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+  }).output('dataurlnewwindow');
+}
 
     filtroFecha.addEventListener('change', () => {
       const fecha = filtroFecha.value;
